@@ -1,0 +1,40 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - freshserviceApiKey
+      - freshserviceDomain
+    properties:
+      freshserviceApiKey:
+        type: string
+        description: Freshservice API key
+      freshserviceDomain:
+        type: string
+        description: Freshservice domain, e.g., yourcompany.freshservice.com
+      freshserviceMode:
+        type: string
+        description: Permission mode (read, standard, full, admin). Default is standard.
+        default: standard
+        enum:
+          - read
+          - standard
+          - full
+          - admin
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'python',
+      args: ['-m', 'freshservice_mcp.server'],
+      env: {
+        FRESHSERVICE_APIKEY: config.freshserviceApiKey,
+        FRESHSERVICE_DOMAIN: config.freshserviceDomain,
+        FRESHSERVICE_MODE: config.freshserviceMode || 'standard'
+      }
+    })
+  exampleConfig:
+    freshserviceApiKey: abcd1234efgh5678
+    freshserviceDomain: examplecompany.freshservice.com
+    freshserviceMode: standard
