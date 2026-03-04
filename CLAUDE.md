@@ -50,6 +50,18 @@ Use `get_ticket_statuses` to get categorized status IDs. Do NOT call `get_ticket
 
 Use `get_current_agent` whenever you need the authenticated user's agent ID, email, or group memberships. It is cached for the session — call it freely without worrying about API cost.
 
+### File discovery
+
+Use `find_file` to search for files on the local filesystem before using attachment tools. When the user asks to find, locate, or attach files from their system, always call `find_file` first. Searches are restricted to directories listed in `FRESHSERVICE_FILE_SEARCH_PATHS` (semicolon-separated). The tool supports partial names (`report`), glob patterns (`*.pdf`), and is case-insensitive. Results include absolute paths, sizes, and modified timestamps. Default limit is 25 results.
+
+### Attachments
+
+Use `add_ticket_attachment`, `add_note_attachment`, and `add_reply_attachment` to upload files. Each takes an absolute `file_path` on the MCP server's filesystem — the server reads the file, detects MIME type, and uploads it via multipart form-data. The total attachment size per ticket cannot exceed 40 MB (Freshservice limit).
+
+When the user provides a partial filename or isn't sure of the exact path, call `find_file` first to resolve the full path, then pass it to the attachment tool.
+
+To list or delete attachments, use `list_ticket_attachments`, `delete_ticket_attachment`, or `delete_conversation_attachment`.
+
 ### Filter query syntax
 
 The `filter_tickets` and `filter_changes` tools accept a query string with this syntax:

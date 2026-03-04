@@ -8,10 +8,10 @@ Freshservice only provides a single API key per account with no scoping. This se
 
 | Mode | Tools | Description |
 |------|-------|-------------|
-| `read` | 50 | List, view, filter, search across all modules. No modifications. |
-| `standard` | 72 | Read + create/update tickets, changes, approvals, service requests. No deletes, no agent/group admin. |
-| `full` | 87 | Standard + products, requesters, solution articles, delete notes/tasks. No agent creation, no ticket/change deletion. |
-| `admin` | 95 | Everything. Create/delete agents, groups, tickets, changes. |
+| `read` | 52 | List, view, filter, search across all modules. File search. No modifications. |
+| `standard` | 77 | Read + create/update tickets, changes, approvals, service requests, attachments. No deletes, no agent/group admin. |
+| `full` | 92 | Standard + products, requesters, solution articles, delete notes/tasks. No agent creation, no ticket/change deletion. |
+| `admin` | 102 | Everything. Create/delete agents, groups, tickets, changes, attachments. |
 
 Default mode is `standard`.
 
@@ -41,6 +41,7 @@ Default mode is `standard`.
 | `FRESHSERVICE_APIKEY` | Yes | Your Freshservice API key |
 | `FRESHSERVICE_MODE` | No | Permission mode: `read`, `standard`, `full`, or `admin`. Default: `standard` |
 | `FRESHSERVICE_CACHE_TTL` | No | Cache lifetime in seconds for schema/reference data. Default: `3600` (1 hour). Set to `0` to disable caching. |
+| `FRESHSERVICE_FILE_SEARCH_PATHS` | No | Semicolon-separated list of directories the `find_file` tool can search (e.g. `C:\Users\me\Docs;C:\Exports`). Required for file discovery. |
 
 ### Install
 
@@ -137,7 +138,7 @@ src/freshservice_mcp/
   models.py             # Enums (TicketSource, ChangeStatus, ...) + Pydantic models
   tools/
     __init__.py          # Imports all tool modules to trigger registration
-    tickets.py           # 13 tools  - tickets + conversations
+    tickets.py           # 13 tools  - tickets, conversations, attachments
     changes.py           # 34 tools  - changes, approvals, notes, tasks, time entries
     service_catalog.py   # 3 tools   - service items + requests
     products.py          # 4 tools   - product CRUD
@@ -147,6 +148,7 @@ src/freshservice_mcp/
     canned_responses.py  # 4 tools   - canned responses + folders
     workspaces.py        # 2 tools   - workspace listing
     solutions.py         # 13 tools  - KB categories, folders, articles
+    files.py             # 1 tool    - local file search for attachment discovery
 ```
 
 ## Mode Details
@@ -161,7 +163,7 @@ Includes: get/list/filter/view operations for tickets, changes, agents, requeste
 
 Day-to-day IT work. Create and update tickets, manage changes through their lifecycle, send replies, add notes, handle approvals. Cannot delete anything or manage agents/groups.
 
-Includes everything in `read` plus: create/update tickets, create/update changes, close changes, ticket replies and notes, change tasks/notes/time entries, approval management, service requests.
+Includes everything in `read` plus: create/update tickets, create/update changes, close changes, ticket replies and notes, attachments, change tasks/notes/time entries, approval management, service requests.
 
 ### full
 
@@ -175,6 +177,37 @@ Full access to everything, including destructive operations. Only use this if yo
 
 Includes everything in `full` plus: delete tickets, delete changes, create/update agents, create/update agent groups, create/update requester groups.
 
+## Attachments
+
+The server provides attachment tools for uploading, listing, and deleting files on tickets.
+
+### Finding files
+
+Use `find_file` to search for files on the local filesystem by partial name or glob pattern before attaching them. This is the recommended first step when a user asks to find, locate, or attach files from their system — for example, asking to "attach the Q4 report" will find `Q4_Report.pdf` in any configured search directory.
+
+Searches are restricted to directories listed in the `FRESHSERVICE_FILE_SEARCH_PATHS` environment variable (semicolon-separated). Matching is case-insensitive and supports partial names (`report`), glob patterns (`*.pdf`), and recursive subdirectory search.
+
+### Uploading
+
+Use `add_ticket_attachment`, `add_note_attachment`, and `add_reply_attachment` to upload files. These tools take an absolute file path on the MCP server's local filesystem, read the file, detect MIME type, and upload it via multipart form-data.
+
+> **Note:** The MCP server must have filesystem access to the file being attached. These tools are designed for scenarios where the MCP client (e.g. Claude Code) runs on the same machine or can write files to a path the server can read.
+
+### Listing and deleting
+
+- `list_ticket_attachments` — list all attachments on a ticket (read mode)
+- `delete_ticket_attachment` / `delete_conversation_attachment` — remove attachments (admin mode)
+
+> **Freshservice limit:** The total size of all attachments on a single ticket cannot exceed 40 MB.
+
+## Agent Signatures
+
+The `send_ticket_reply` and `add_reply_attachment` tools automatically append the current agent's HTML signature to every outbound reply. The signature is pulled from your Freshservice agent profile (the same one configured under **Profile Settings → Signature** in the Freshservice portal).
+
+- Signature data comes from the cached `get_current_agent` call, so there is **zero additional API cost**.
+- If no signature is configured in your profile, replies are sent without one.
+- Internal notes (`create_ticket_note`, `add_note_attachment`) are **not** affected — signatures are only appended to replies visible to the requester.
+
 ## Prompt Examples
 
 Once connected, you can ask things like:
@@ -185,7 +218,9 @@ Once connected, you can ask things like:
 | "What's ticket #4521 about?" | `get_ticket_by_id` | 1 |
 | "Create a ticket for the printer on floor 3" | `create_ticket` with subject/description/priority | 1 |
 | "Add a note to ticket #4521 saying we ordered parts" | `create_ticket_note` | 1 |
-| "Reply to ticket #4521 letting them know it's fixed" | `send_ticket_reply` | 1 |
+| "Reply to ticket #4521 letting them know it's fixed" | `send_ticket_reply` — auto-appends your agent signature | 1 |
+| "Find that Q4 report" | `find_file` — searches configured directories for matching files | 0 |
+| "Attach this screenshot to ticket #4521" | `add_ticket_attachment` with the file path | 1 |
 | "Show all changes awaiting approval" | `filter_changes` with query `status:3` | 1 |
 | "What ticket statuses do we have?" | `get_ticket_statuses` — returns every status categorized as resolved/unresolved | 0 (cached) |
 | "Who am I in Freshservice?" | `get_current_agent` — returns your agent profile | 0 (cached) |
@@ -196,7 +231,7 @@ Once connected, you can ask things like:
 
 Freshservice enforces a per-hour tenant-wide API rate limit. This server is designed to stay well within it:
 
-- **1 tool call = 1 API call** for 91 of 95 tools. The server makes zero background calls, zero polling, and zero prefetching — every API call is triggered only when the LLM explicitly invokes a tool.
+- **1 tool call = 1 API call** for most tools. The server makes zero background calls, zero polling, and zero prefetching — every API call is triggered only when the LLM explicitly invokes a tool. Attachment uploads use multipart form-data and count as a single API call each.
 - **Compound convenience tools**: `get_my_tickets` chains agent lookup + status discovery + filter into a single tool call (1 API call on warm cache, up to 3 on first use). `get_ticket_statuses` parses cached field data at zero API cost.
 - **Rate-limit handling**: A custom transport reads `X-RateLimit-Remaining` on every response and automatically retries on HTTP 429 with the `Retry-After` delay (up to 3 retries).
 - **Response caching**: Schema and reference-data tools cache successful responses for the duration set by `FRESHSERVICE_CACHE_TTL` (default 1 hour). These are admin-configured structures that effectively never change mid-session. Repeated lookups cost zero API calls. Use the `clear_cache` tool to force a refresh.
@@ -251,8 +286,8 @@ Everything else has been rewritten or added from scratch:
 | **Convenience tools** | None | `get_my_tickets`, `get_ticket_statuses`, `get_current_agent` |
 | **Tool descriptions** | Generic one-liners | Enum values, query syntax examples, cross-references, behavioral context |
 | **Credential handling** | None | Validated at startup, fail-fast on missing env vars |
-| **Tests** | None | 44 tests covering cache, rate-limiting, config, and convenience tools |
-| **Tool count** | ~50 | 95 permission-gated + 2 always-on |
+| **Tests** | None | 53 tests covering cache, rate-limiting, config, convenience tools, and attachments |
+| **Tool count** | ~50 | 102 permission-gated + 2 always-on |
 
 ## License
 

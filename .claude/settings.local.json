@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.freshservice.com)",
+      "Bash(python3 -c \":*)",
+      "Bash(powershell -Command \":*)",
+      "Bash(tr '>' '\\\\n')",
+      "Bash(tr '<' '\\\\n')",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -c \":*)"
+    ]
+  }
+}

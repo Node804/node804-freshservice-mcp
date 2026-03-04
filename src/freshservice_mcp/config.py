@@ -29,6 +29,7 @@ TOOL_PERMISSIONS = {
     "get_ticket_by_id": "read",
     "filter_tickets": "read",
     "list_all_ticket_conversation": "read",
+    "list_ticket_attachments": "read",
 
     # === TICKETS: WRITE ===
     "create_ticket": "standard",
@@ -36,9 +37,14 @@ TOOL_PERMISSIONS = {
     "send_ticket_reply": "standard",
     "create_ticket_note": "standard",
     "update_ticket_conversation": "standard",
+    "add_ticket_attachment": "standard",
+    "add_note_attachment": "standard",
+    "add_reply_attachment": "standard",
 
     # === TICKETS: DELETE ===
     "delete_ticket": "admin",
+    "delete_ticket_attachment": "admin",
+    "delete_conversation_attachment": "admin",
 
     # === CHANGES: READ ===
     "get_changes": "read",
@@ -157,6 +163,9 @@ TOOL_PERMISSIONS = {
     "create_solution_folder": "full",
     "update_solution_folder": "full",
     "publish_solution_article": "full",
+
+    # === LOCAL FILES: READ ===
+    "find_file": "read",
 }
 
 # Mode hierarchy - each mode includes all permissions of lower modes
