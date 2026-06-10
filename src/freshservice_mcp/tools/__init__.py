@@ -11,4 +11,5 @@ from . import (  # noqa: F401
     canned_responses,
     workspaces,
     solutions,
+    files,
 )

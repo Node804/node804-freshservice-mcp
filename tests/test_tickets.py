@@ -393,3 +393,232 @@ class TestGetMyTickets:
         # Verify the URL passed to client includes page=3
         call_args = mock_client.get.call_args
         assert "page=3" in call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# Ticket Attachments
+# ---------------------------------------------------------------------------
+
+
+class TestAddTicketAttachment:
+    def _make_mock_response(self, json_data, status_code=200):
+        mock = MagicMock()
+        mock.status_code = status_code
+        mock.json.return_value = json_data
+        mock.raise_for_status.return_value = None
+        return mock
+
+    @pytest.mark.asyncio
+    async def test_file_not_found(self, mock_env):
+        from freshservice_mcp.tools.tickets import add_ticket_attachment
+
+        result = await add_ticket_attachment(
+            ticket_id=1,
+            file_path="/nonexistent/file.txt",
+        )
+        assert "error" in result
+        assert "File not found" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_successful_upload(self, mock_env, tmp_path):
+        from freshservice_mcp.tools.tickets import add_ticket_attachment
+
+        # Create a temp file
+        test_file = tmp_path / "test.txt"
+        test_file.write_text("hello world")
+
+        fake_response = self._make_mock_response(
+            {"ticket": {"id": 1, "attachments": [{"id": 10, "name": "test.txt"}]}}
+        )
+
+        with patch(
+            "freshservice_mcp.tools.tickets.multipart_request",
+            new_callable=AsyncMock,
+            return_value=fake_response,
+        ) as mock_req:
+            result = await add_ticket_attachment(
+                ticket_id=1,
+                file_path=str(test_file),
+            )
+
+        assert "error" not in result
+        assert result["success"] is True
+        # Verify multipart_request was called with correct args
+        call_args = mock_req.call_args
+        assert call_args[0][0] == "PUT"
+        assert "/api/v2/tickets/1" in call_args[0][1]
+
+
+class TestAddNoteAttachment:
+    def _make_mock_response(self, json_data, status_code=200):
+        mock = MagicMock()
+        mock.status_code = status_code
+        mock.json.return_value = json_data
+        mock.raise_for_status.return_value = None
+        return mock
+
+    @pytest.mark.asyncio
+    async def test_empty_body(self, mock_env):
+        from freshservice_mcp.tools.tickets import add_note_attachment
+
+        result = await add_note_attachment(
+            ticket_id=1,
+            body="",
+            file_path="/some/file.txt",
+        )
+        assert "error" in result
+        assert "body" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_successful_note_with_attachment(self, mock_env, tmp_path):
+        from freshservice_mcp.tools.tickets import add_note_attachment
+
+        test_file = tmp_path / "report.pdf"
+        test_file.write_bytes(b"%PDF-fake-content")
+
+        fake_response = self._make_mock_response(
+            {"conversation": {"id": 99, "body": "See attached"}}
+        )
+
+        with patch(
+            "freshservice_mcp.tools.tickets.multipart_request",
+            new_callable=AsyncMock,
+            return_value=fake_response,
+        ) as mock_req:
+            result = await add_note_attachment(
+                ticket_id=5,
+                body="See attached",
+                file_path=str(test_file),
+            )
+
+        assert "error" not in result
+        call_args = mock_req.call_args
+        assert call_args[0][0] == "POST"
+        assert "/api/v2/tickets/5/notes" in call_args[0][1]
+        assert call_args[1]["data"]["body"] == "See attached"
+
+
+class TestAddReplyAttachment:
+    def _make_mock_response(self, json_data, status_code=200):
+        mock = MagicMock()
+        mock.status_code = status_code
+        mock.json.return_value = json_data
+        mock.raise_for_status.return_value = None
+        return mock
+
+    @pytest.mark.asyncio
+    async def test_empty_body(self, mock_env):
+        from freshservice_mcp.tools.tickets import add_reply_attachment
+
+        result = await add_reply_attachment(
+            ticket_id=1,
+            body="   ",
+            file_path="/some/file.txt",
+        )
+        assert "error" in result
+
+    @pytest.mark.asyncio
+    async def test_successful_reply_with_attachment(self, mock_env, tmp_path):
+        from freshservice_mcp.tools.tickets import add_reply_attachment
+
+        test_file = tmp_path / "screenshot.png"
+        test_file.write_bytes(b"\x89PNG fake")
+
+        fake_response = self._make_mock_response(
+            {"conversation": {"id": 101, "body": "Please see screenshot"}}
+        )
+
+        with patch(
+            "freshservice_mcp.tools.tickets.multipart_request",
+            new_callable=AsyncMock,
+            return_value=fake_response,
+        ) as mock_req:
+            result = await add_reply_attachment(
+                ticket_id=7,
+                body="Please see screenshot",
+                file_path=str(test_file),
+            )
+
+        assert "error" not in result
+        call_args = mock_req.call_args
+        assert call_args[0][0] == "POST"
+        assert "/api/v2/tickets/7/reply" in call_args[0][1]
+
+
+class TestListTicketAttachments:
+    @pytest.mark.asyncio
+    async def test_list_attachments(self, mock_env):
+        from freshservice_mcp.tools.tickets import list_ticket_attachments
+
+        fake_attachments = [
+            {"id": 10, "name": "doc.pdf", "size": 1024},
+            {"id": 11, "name": "img.png", "size": 2048},
+        ]
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "ticket": {"id": 1, "attachments": fake_attachments}
+        }
+        mock_response.raise_for_status.return_value = None
+
+        mock_client = AsyncMock()
+        mock_client.get.return_value = mock_response
+
+        with patch(
+            "freshservice_mcp.tools.tickets.get_client",
+            return_value=mock_client,
+        ):
+            result = await list_ticket_attachments(ticket_id=1)
+
+        assert "error" not in result
+        assert result["count"] == 2
+        assert result["ticket_id"] == 1
+        assert len(result["attachments"]) == 2
+
+
+class TestDeleteTicketAttachment:
+    @pytest.mark.asyncio
+    async def test_successful_delete(self, mock_env):
+        from freshservice_mcp.tools.tickets import delete_ticket_attachment
+
+        mock_response = MagicMock()
+        mock_response.status_code = 204
+
+        mock_client = AsyncMock()
+        mock_client.delete.return_value = mock_response
+
+        with patch(
+            "freshservice_mcp.tools.tickets.get_client",
+            return_value=mock_client,
+        ):
+            result = await delete_ticket_attachment(ticket_id=1, attachment_id=10)
+
+        assert result["success"] is True
+        mock_client.delete.assert_called_once_with(
+            "/api/v2/tickets/1/attachments/10"
+        )
+
+
+class TestDeleteConversationAttachment:
+    @pytest.mark.asyncio
+    async def test_successful_delete(self, mock_env):
+        from freshservice_mcp.tools.tickets import delete_conversation_attachment
+
+        mock_response = MagicMock()
+        mock_response.status_code = 204
+
+        mock_client = AsyncMock()
+        mock_client.delete.return_value = mock_response
+
+        with patch(
+            "freshservice_mcp.tools.tickets.get_client",
+            return_value=mock_client,
+        ):
+            result = await delete_conversation_attachment(
+                conversation_id=99, attachment_id=20
+            )
+
+        assert result["success"] is True
+        mock_client.delete.assert_called_once_with(
+            "/api/v2/conversations/99/attachments/20"
+        )

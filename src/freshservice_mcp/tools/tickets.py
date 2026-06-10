@@ -2,14 +2,37 @@
 
 import json
 import logging
+import mimetypes
+import os
 import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response, FRESHSERVICE_DOMAIN
+from ..client import get_client, parse_link_header, cached_response, multipart_request, FRESHSERVICE_DOMAIN
 from ..models import TicketSource, TicketStatus, TicketPriority
 
 logger = logging.getLogger(__name__)
+
+
+async def _get_agent_signature() -> str:
+    """Fetch the current agent's HTML signature (cached via get_current_agent).
+
+    Returns the signature string, or empty string if unavailable.
+    """
+    from .agents import get_current_agent
+
+    agent_response = await get_current_agent()
+    if "error" in agent_response:
+        logger.warning("Could not fetch agent signature: %s", agent_response["error"])
+        return ""
+    return agent_response.get("agent", {}).get("signature", "") or ""
+
+
+def _append_signature(body: str, signature: str) -> str:
+    """Append the agent signature to the reply body if a signature exists."""
+    if not signature:
+        return body
+    return f"{body.strip()}\n{signature}"
 
 
 @conditional_tool()
@@ -439,8 +462,11 @@ async def send_ticket_reply(
                 return []
         return value or []
 
+    signature = await _get_agent_signature()
+    final_body = _append_signature(body, signature)
+
     payload: Dict[str, Any] = {
-        "body": body.strip(),
+        "body": final_body,
         "from_email": from_email or f"helpdesk@{FRESHSERVICE_DOMAIN}",
     }
     if user_id is not None:
@@ -545,3 +571,224 @@ async def list_all_ticket_conversation(
         }
     except Exception as e:
         return {"error": f"Failed to fetch ticket conversations: {e}"}
+
+
+# --- Ticket Attachments ---
+
+
+def _read_attachment(file_path: str):
+    """Read a file from disk and return (filename, file_bytes, content_type).
+
+    Raises ValueError if the file does not exist or is not readable.
+    """
+    if not os.path.isfile(file_path):
+        raise ValueError(f"File not found: {file_path}")
+
+    filename = os.path.basename(file_path)
+    content_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+
+    return filename, file_bytes, content_type
+
+
+@conditional_tool()
+async def add_ticket_attachment(
+    ticket_id: int,
+    file_path: str,
+) -> Dict[str, Any]:
+    """Add an attachment to an existing ticket from a local file path.
+
+    Reads the file from disk and uploads it via multipart form-data.
+    The file must exist on the MCP server's local filesystem.
+
+    Args:
+        ticket_id: The ticket to attach the file to
+        file_path: Absolute path to the file on disk"""
+    try:
+        filename, file_bytes, content_type = _read_attachment(file_path)
+    except ValueError as e:
+        return {"error": str(e)}
+
+    try:
+        response = await multipart_request(
+            "PUT",
+            f"/api/v2/tickets/{ticket_id}",
+            files=[("attachments[]", (filename, file_bytes, content_type))],
+        )
+        if not response.is_success:
+            try:
+                detail = response.json()
+            except Exception:
+                detail = response.text
+            return {"error": f"HTTP {response.status_code}: {detail}"}
+        return {"success": True, "ticket": response.json()}
+    except Exception as e:
+        return {"error": f"Failed to add attachment to ticket: {e}"}
+
+
+@conditional_tool()
+async def add_note_attachment(
+    ticket_id: int,
+    body: str,
+    file_path: str,
+) -> Dict[str, Any]:
+    """Create a ticket note with an attachment from a local file path.
+
+    Adds an internal note (not emailed to the requester) with a file
+    attachment.  The file must exist on the MCP server's local filesystem.
+
+    Args:
+        ticket_id: The ticket to add the note to
+        body: Note content (HTML supported)
+        file_path: Absolute path to the file on disk"""
+    if not body or not body.strip():
+        return {"error": "Missing or empty body: Note content is required"}
+
+    try:
+        filename, file_bytes, content_type = _read_attachment(file_path)
+    except ValueError as e:
+        return {"error": str(e)}
+
+    try:
+        response = await multipart_request(
+            "POST",
+            f"/api/v2/tickets/{ticket_id}/notes",
+            files=[("attachments[]", (filename, file_bytes, content_type))],
+            data={"body": body.strip()},
+        )
+        if not response.is_success:
+            try:
+                detail = response.json()
+            except Exception:
+                detail = response.text
+            return {"error": f"HTTP {response.status_code}: {detail}"}
+        return response.json()
+    except Exception as e:
+        return {"error": f"Failed to create note with attachment: {e}"}
+
+
+@conditional_tool()
+async def add_reply_attachment(
+    ticket_id: int,
+    body: str,
+    file_path: str,
+) -> Dict[str, Any]:
+    """Send a ticket reply with an attachment from a local file path.
+
+    Creates an outbound email reply visible to the requester, with a file
+    attachment.  The file must exist on the MCP server's local filesystem.
+
+    Args:
+        ticket_id: The ticket to reply to
+        body: Reply content (HTML supported)
+        file_path: Absolute path to the file on disk"""
+    if not body or not body.strip():
+        return {"error": "Missing or empty body: Reply content is required"}
+
+    try:
+        filename, file_bytes, content_type = _read_attachment(file_path)
+    except ValueError as e:
+        return {"error": str(e)}
+
+    signature = await _get_agent_signature()
+    final_body = _append_signature(body, signature)
+
+    try:
+        response = await multipart_request(
+            "POST",
+            f"/api/v2/tickets/{ticket_id}/reply",
+            files=[("attachments[]", (filename, file_bytes, content_type))],
+            data={"body": final_body},
+        )
+        if not response.is_success:
+            try:
+                detail = response.json()
+            except Exception:
+                detail = response.text
+            return {"error": f"HTTP {response.status_code}: {detail}"}
+        return response.json()
+    except Exception as e:
+        return {"error": f"Failed to send reply with attachment: {e}"}
+
+
+@conditional_tool()
+async def list_ticket_attachments(
+    ticket_id: int,
+) -> Dict[str, Any]:
+    """List all attachments on a ticket.
+
+    Returns attachment metadata including IDs, filenames, sizes, and
+    download URLs.
+
+    Args:
+        ticket_id: The ticket to list attachments for"""
+    client = get_client()
+    try:
+        response = await client.get(
+            f"/api/v2/tickets/{ticket_id}",
+            params={"include": "attachments"},
+        )
+        response.raise_for_status()
+        data = response.json()
+        ticket = data.get("ticket", data)
+        attachments = ticket.get("attachments", [])
+        return {
+            "ticket_id": ticket_id,
+            "attachments": attachments,
+            "count": len(attachments),
+        }
+    except Exception as e:
+        return {"error": f"Failed to list ticket attachments: {e}"}
+
+
+@conditional_tool()
+async def delete_ticket_attachment(
+    ticket_id: int,
+    attachment_id: int,
+) -> Dict[str, Any]:
+    """Delete an attachment from a ticket.  This cannot be undone.
+
+    Use list_ticket_attachments to find attachment IDs.
+
+    Args:
+        ticket_id: The ticket the attachment belongs to
+        attachment_id: The ID of the attachment to delete"""
+    client = get_client()
+    try:
+        response = await client.delete(
+            f"/api/v2/tickets/{ticket_id}/attachments/{attachment_id}"
+        )
+        if response.status_code == 204:
+            return {"success": True, "message": "Attachment deleted successfully"}
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Failed to delete ticket attachment: {e}"}
+
+
+@conditional_tool()
+async def delete_conversation_attachment(
+    conversation_id: int,
+    attachment_id: int,
+) -> Dict[str, Any]:
+    """Delete an attachment from a conversation (reply or note).
+
+    This cannot be undone.  Use list_all_ticket_conversation to find
+    conversation IDs, then inspect each conversation's attachments.
+
+    Args:
+        conversation_id: The conversation the attachment belongs to
+        attachment_id: The ID of the attachment to delete"""
+    client = get_client()
+    try:
+        response = await client.delete(
+            f"/api/v2/conversations/{conversation_id}/attachments/{attachment_id}"
+        )
+        if response.status_code == 204:
+            return {"success": True, "message": "Conversation attachment deleted successfully"}
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Failed to delete conversation attachment: {e}"}

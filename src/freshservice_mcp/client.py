@@ -245,6 +245,40 @@ def cached_response(ttl_seconds: Optional[int] = None):
     return decorator
 
 
+async def multipart_request(
+    method: str,
+    url: str,
+    files: list,
+    data: Optional[Dict[str, Any]] = None,
+) -> httpx.Response:
+    """Make a multipart/form-data request (for file uploads).
+
+    The shared client has Content-Type: application/json as a default header.
+    This helper overrides headers per-request so httpx can set the correct
+    multipart boundary automatically.
+
+    Args:
+        method: HTTP method (PUT, POST, etc.)
+        url: API endpoint path (e.g. /api/v2/tickets/123)
+        files: List of (field_name, (filename, file_bytes, content_type)) tuples
+        data: Optional dict of additional form fields
+
+    Returns:
+        The httpx.Response object.
+    """
+    client = get_client()
+    # The shared client has Content-Type: application/json which breaks
+    # multipart uploads.  Create a one-off client that inherits only the
+    # auth header and base URL so httpx can set the multipart boundary.
+    auth_header = client.headers.get("authorization", "")
+    async with httpx.AsyncClient(
+        base_url=str(client.base_url),
+        headers={"Authorization": auth_header},
+        timeout=30.0,
+    ) as mp_client:
+        return await mp_client.request(method, url, files=files, data=data or {})
+
+
 def clear_response_cache() -> int:
     """Clear all cached responses and return the number of entries removed."""
     count = len(_response_cache._store)
