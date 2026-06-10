@@ -8,19 +8,19 @@ Freshservice only provides a single API key per account with no scoping. This se
 
 | Mode | Tools | Description |
 |------|-------|-------------|
-| `read` | 52 | List, view, filter, search across all modules. File search. No modifications. |
-| `standard` | 77 | Read + create/update tickets, changes, approvals, service requests, attachments. No deletes, no agent/group admin. |
-| `full` | 92 | Standard + products, requesters, solution articles, delete notes/tasks. No agent creation, no ticket/change deletion. |
-| `admin` | 102 | Everything. Create/delete agents, groups, tickets, changes, attachments. |
+| `read` | 54 | List, view, filter, search across all modules. File search. No modifications. |
+| `standard` | 81 | Read + create/update tickets, changes, approvals, service requests, attachments, time entries. No deletes, no agent/group admin. |
+| `full` | 97 | Standard + products, requesters, solution articles, delete notes/tasks/time entries. No agent creation, no ticket/change deletion. |
+| `admin` | 107 | Everything. Create/delete agents, groups, tickets, changes, attachments. |
 
-Default mode is `standard`.
+Default mode is `read`.
 
 ## Setup
 
 ### Prerequisites
 
-- **Python 3.13+** — check with `python --version`
-- **pip** — comes with Python
+- **[uv](https://docs.astral.sh/uv/)** (recommended) — manages Python and dependencies for you, with hash-verified installs
+  - or **Python 3.11+** with pip
 - A **Freshservice account** with API access enabled
 
 ### Getting Your Freshservice API Key
@@ -39,19 +39,34 @@ Default mode is `standard`.
 |----------|----------|-------------|
 | `FRESHSERVICE_DOMAIN` | Yes | Your Freshservice domain (e.g. `yourcompany.freshservice.com`) |
 | `FRESHSERVICE_APIKEY` | Yes | Your Freshservice API key |
-| `FRESHSERVICE_MODE` | No | Permission mode: `read`, `standard`, `full`, or `admin`. Default: `standard` |
+| `FRESHSERVICE_MODE` | No | Permission mode: `read`, `standard`, `full`, or `admin`. Default: `read` |
 | `FRESHSERVICE_CACHE_TTL` | No | Cache lifetime in seconds for schema/reference data. Default: `3600` (1 hour). Set to `0` to disable caching. |
 | `FRESHSERVICE_FILE_SEARCH_PATHS` | No | Semicolon-separated list of directories the `find_file` tool can search (e.g. `C:\Users\me\Docs;C:\Exports`). Required for file discovery. |
+| `FRESHSERVICE_AUDIT_LOG` | No | Path to a JSON-lines audit log (e.g. `C:\logs\freshservice-audit.jsonl`). Every tool call is logged with sanitized arguments, success/error state, and timing. Disabled when unset. |
 
 ### Install
 
+**Option A — uv (recommended).** No install step at all: `uvx` fetches the package from PyPI on first run and caches it. Pin the version so upgrades are deliberate:
+
 ```bash
-git clone <this-repo>
-cd freshservice-mcp
-pip install -e .
+uvx node804-freshservice-mcp==1.2.0
 ```
 
-This installs the `freshservice-mcp` command and the `freshservice_mcp` Python module. The `-e` (editable) flag means changes you make to the source take effect immediately without reinstalling.
+**Option B — pip:**
+
+```bash
+pip install node804-freshservice-mcp
+```
+
+**Option C — from source (development):**
+
+```bash
+git clone <this-repo>
+cd node804-freshservice-mcp
+uv sync          # or: pip install -e ".[dev]"
+```
+
+Each option provides the `node804-freshservice-mcp` command and the `node804_freshservice_mcp` Python module.
 
 ### Claude Desktop
 
@@ -59,24 +74,26 @@ This installs the `freshservice-mcp` command and the `freshservice_mcp` Python m
    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
    - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-2. Add the `freshservice-mcp` entry under `mcpServers` (create the file if it doesn't exist):
+2. Add the `node804-freshservice-mcp` entry under `mcpServers` (create the file if it doesn't exist):
 
 ```json
 {
   "mcpServers": {
-    "freshservice-mcp": {
-      "command": "python",
-      "args": ["-m", "freshservice_mcp.server"],
+    "FreshService": {
+      "command": "uvx",
+      "args": ["node804-freshservice-mcp==1.2.0"],
       "env": {
         "FRESHSERVICE_APIKEY": "your_api_key",
         "FRESHSERVICE_DOMAIN": "yourcompany.freshservice.com",
-        "FRESHSERVICE_MODE": "standard"
-      },
-      "cwd": "/path/to/freshservice-mcp"
+        "FRESHSERVICE_MODE": "standard",
+        "FRESHSERVICE_CACHE_TTL": 3600
+      }
     }
   }
 }
 ```
+
+If you installed with pip instead of uv, use `"command": "python"` with `"args": ["-m", "node804_freshservice_mcp.server"]`.
 
 3. Restart Claude Desktop — the server starts automatically when Claude needs it.
 
@@ -91,10 +108,10 @@ cp .env.example .env   # edit with your credentials
 ```json
 {
   "mcpServers": {
-    "freshservice-mcp": {
-      "command": "python",
-      "args": ["-m", "freshservice_mcp.server"],
-      "cwd": "/path/to/freshservice-mcp"
+    "node804-freshservice-mcp": {
+      "command": "uvx",
+      "args": ["node804-freshservice-mcp==1.2.0"],
+      "cwd": "/path/to/node804-freshservice-mcp"
     }
   }
 }
@@ -105,11 +122,11 @@ The server calls `load_dotenv()` on startup, which reads `.env` from the working
 ### Claude Code (CLI)
 
 ```bash
-claude mcp add freshservice-mcp \
+claude mcp add node804-freshservice-mcp \
   -e FRESHSERVICE_APIKEY=your_api_key \
   -e FRESHSERVICE_DOMAIN=yourcompany.freshservice.com \
   -e FRESHSERVICE_MODE=standard \
-  -- python -m freshservice_mcp.server
+  -- uvx node804-freshservice-mcp==1.2.0
 ```
 
 To verify it was added:
@@ -130,7 +147,7 @@ If either fails, check the [Troubleshooting](#troubleshooting) section below.
 ## Project Structure
 
 ```
-src/freshservice_mcp/
+src/node804_freshservice_mcp/
   __init__.py           # Package marker + version
   server.py             # FastMCP instance, conditional_tool decorator, main()
   config.py             # Permission modes, tool hierarchy, mode summary
@@ -138,8 +155,8 @@ src/freshservice_mcp/
   models.py             # Enums (TicketSource, ChangeStatus, ...) + Pydantic models
   tools/
     __init__.py          # Imports all tool modules to trigger registration
-    tickets.py           # 13 tools  - tickets, conversations, attachments
-    changes.py           # 34 tools  - changes, approvals, notes, tasks, time entries
+    tickets.py           # 24 tools  - tickets, conversations, attachments, time entries
+    changes.py           # 33 tools  - changes, approvals, notes, tasks, time entries
     service_catalog.py   # 3 tools   - service items + requests
     products.py          # 4 tools   - product CRUD
     requesters.py        # 6 tools   - requester CRUD + fields
@@ -153,13 +170,13 @@ src/freshservice_mcp/
 
 ## Mode Details
 
-### read
+### read (default)
 
 Safe for anyone who needs to look up ticket info, check change status, or search the knowledge base. Cannot modify anything.
 
 Includes: get/list/filter/view operations for tickets, changes, agents, requesters, groups, products, service catalog, canned responses, workspaces, and solution articles.
 
-### standard (default)
+### standard
 
 Day-to-day IT work. Create and update tickets, manage changes through their lifecycle, send replies, add notes, handle approvals. Cannot delete anything or manage agents/groups.
 
@@ -260,15 +277,19 @@ The `server_status` and `clear_cache` tools are always available regardless of m
 | Server starts but tools return `401 Unauthorized` | Invalid API key | Regenerate your key in Freshservice Profile Settings and update your config |
 | Server starts but tools return `404 Not Found` | Wrong domain format | Use the full domain (`yourcompany.freshservice.com`), not just the subdomain name |
 | Tools you expect are missing | Mode is too restrictive | Check `server_status` to see the current mode, then set `FRESHSERVICE_MODE` to a higher level |
-| `No module named freshservice_mcp` | Package not installed | Run `pip install -e .` from the repo root |
+| `No module named node804_freshservice_mcp` | Package not installed | Use the `uvx` config (installs automatically), or run `pip install node804-freshservice-mcp` |
 | Stale data after admin changes | Cached response | Ask the LLM to call `clear_cache`, or set `FRESHSERVICE_CACHE_TTL=0` to disable caching |
 
 ## Development
 
 ```bash
-pip install -e ".[dev]"
-pytest tests/
+uv sync                # creates .venv from pyproject.toml + uv.lock
+uv run pytest tests/
 ```
+
+Or with pip: `pip install -e ".[dev]"` then `pytest tests/`.
+
+`uv.lock` pins the full dependency graph with hashes for reproducible installs. After changing dependencies in `pyproject.toml`, run `uv lock` and commit the updated lockfile.
 
 ## Heritage & What Changed
 
@@ -286,8 +307,12 @@ Everything else has been rewritten or added from scratch:
 | **Convenience tools** | None | `get_my_tickets`, `get_ticket_statuses`, `get_current_agent` |
 | **Tool descriptions** | Generic one-liners | Enum values, query syntax examples, cross-references, behavioral context |
 | **Credential handling** | None | Validated at startup, fail-fast on missing env vars |
-| **Tests** | None | 53 tests covering cache, rate-limiting, config, convenience tools, and attachments |
-| **Tool count** | ~50 | 102 permission-gated + 2 always-on |
+| **Tests** | None | 55 tests covering cache, rate-limiting, config, permission-map consistency, convenience tools, and attachments |
+| **Tool count** | ~50 | 107 permission-gated + 2 always-on |
+
+## AI-Assisted Development
+
+Portions of this project including code, tests, and documentation were developed with the assistance of generative AI (Anthropic's Claude). All changes are human-reviewed before merge and exercised by the automated test suite, but as with any software, review the code and test against a non-production Freshservice instance before trusting it with write access (`standard` mode or above) to a live tenant.
 
 ## License
 

@@ -4,7 +4,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response
+from ..client import get_client, parse_link_header, cached_response, api_error
 
 
 @conditional_tool()
@@ -65,7 +65,7 @@ async def create_requester(
         response.raise_for_status()
         return {"success": True, "data": response.json()}
     except Exception as e:
-        return {"error": f"Failed to create requester: {e}"}
+        return api_error("Failed to create requester", e)
 
 
 @conditional_tool()
@@ -105,7 +105,7 @@ async def get_all_requesters(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch requesters: {e}"}
+        return api_error("Failed to fetch requesters", e)
 
 
 @conditional_tool()
@@ -119,7 +119,7 @@ async def get_requester_by_id(requester_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch requester: {e}"}
+        return api_error("Failed to fetch requester", e)
 
 
 @conditional_tool()
@@ -135,7 +135,7 @@ async def list_all_requester_fields() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch requester fields: {e}"}
+        return api_error("Failed to fetch requester fields", e)
 
 
 @conditional_tool()
@@ -189,7 +189,7 @@ async def update_requester(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update requester: {e}"}
+        return api_error("Failed to update requester", e)
 
 
 @conditional_tool()
@@ -218,4 +218,4 @@ async def filter_requesters(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to filter requesters: {e}"}
+        return api_error("Failed to filter requesters", e)

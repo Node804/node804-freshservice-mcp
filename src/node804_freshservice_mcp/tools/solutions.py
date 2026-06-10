@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response
+from ..client import get_client, parse_link_header, cached_response, api_error
 
 
 # --- Categories ---
@@ -49,7 +49,7 @@ async def get_all_solution_category(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch solution categories: {e}"}
+        return api_error("Failed to fetch solution categories", e)
 
 
 @conditional_tool()
@@ -63,7 +63,7 @@ async def get_solution_category(category_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch solution category: {e}"}
+        return api_error("Failed to fetch solution category", e)
 
 
 @conditional_tool()
@@ -85,7 +85,7 @@ async def create_solution_category(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create solution category: {e}"}
+        return api_error("Failed to create solution category", e)
 
 
 @conditional_tool()
@@ -114,7 +114,7 @@ async def update_solution_category(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update solution category: {e}"}
+        return api_error("Failed to update solution category", e)
 
 
 # --- Folders ---
@@ -160,7 +160,7 @@ async def get_list_of_solution_folder(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch solution folders: {e}"}
+        return api_error("Failed to fetch solution folders", e)
 
 
 @conditional_tool()
@@ -174,7 +174,7 @@ async def get_solution_folder(folder_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch solution folder: {e}"}
+        return api_error("Failed to fetch solution folder", e)
 
 
 @conditional_tool()
@@ -212,7 +212,7 @@ async def create_solution_folder(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create solution folder: {e}"}
+        return api_error("Failed to create solution folder", e)
 
 
 @conditional_tool()
@@ -239,7 +239,7 @@ async def update_solution_folder(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update solution folder: {e}"}
+        return api_error("Failed to update solution folder", e)
 
 
 # --- Articles ---
@@ -285,7 +285,7 @@ async def get_list_of_solution_article(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch solution articles: {e}"}
+        return api_error("Failed to fetch solution articles", e)
 
 
 @conditional_tool()
@@ -299,7 +299,7 @@ async def get_solution_article(article_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch solution article: {e}"}
+        return api_error("Failed to fetch solution article", e)
 
 
 @conditional_tool()
@@ -347,7 +347,7 @@ async def create_solution_article(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create solution article: {e}"}
+        return api_error("Failed to create solution article", e)
 
 
 @conditional_tool()
@@ -386,7 +386,7 @@ async def update_solution_article(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update solution article: {e}"}
+        return api_error("Failed to update solution article", e)
 
 
 @conditional_tool()
@@ -403,4 +403,4 @@ async def publish_solution_article(article_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to publish solution article: {e}"}
+        return api_error("Failed to publish solution article", e)

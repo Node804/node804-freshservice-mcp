@@ -16,8 +16,8 @@ startCommand:
         description: Freshservice domain, e.g., yourcompany.freshservice.com
       freshserviceMode:
         type: string
-        description: Permission mode (read, standard, full, admin). Default is standard.
-        default: standard
+        description: Permission mode (read, standard, full, admin). Default is read.
+        default: read
         enum:
           - read
           - standard
@@ -27,11 +27,11 @@ startCommand:
     |-
     (config) => ({
       command: 'python',
-      args: ['-m', 'freshservice_mcp.server'],
+      args: ['-m', 'node804_freshservice_mcp.server'],
       env: {
         FRESHSERVICE_APIKEY: config.freshserviceApiKey,
         FRESHSERVICE_DOMAIN: config.freshserviceDomain,
-        FRESHSERVICE_MODE: config.freshserviceMode || 'standard'
+        FRESHSERVICE_MODE: config.freshserviceMode || 'read'
       }
     })
   exampleConfig:

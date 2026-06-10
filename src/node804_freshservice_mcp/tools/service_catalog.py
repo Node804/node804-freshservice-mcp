@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header
+from ..client import get_client, parse_link_header, api_error
 
 
 @conditional_tool()
@@ -61,7 +61,7 @@ async def list_service_items(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch service items: {e}"}
+        return api_error("Failed to fetch service items", e)
 
 
 @conditional_tool()
@@ -81,7 +81,7 @@ async def get_requested_items(ticket_id: int) -> Dict[str, Any]:
         if ticket_data.get("ticket", {}).get("type") != "Service Request":
             return {"error": "Requested items can only be fetched for service requests"}
     except Exception as e:
-        return {"error": f"Failed to fetch ticket: {e}"}
+        return api_error("Failed to fetch ticket", e)
 
     # Step 2: Fetch the requested items
     try:
@@ -89,7 +89,7 @@ async def get_requested_items(ticket_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch requested items: {e}"}
+        return api_error("Failed to fetch requested items", e)
 
 
 @conditional_tool()
@@ -126,4 +126,4 @@ async def create_service_request(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to place service request: {e}"}
+        return api_error("Failed to place service request", e)

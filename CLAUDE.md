@@ -62,6 +62,12 @@ When the user provides a partial filename or isn't sure of the exact path, call 
 
 To list or delete attachments, use `list_ticket_attachments`, `delete_ticket_attachment`, or `delete_conversation_attachment`.
 
+### Time entries
+
+Use `list_ticket_time_entries` and `view_ticket_time_entry` to read time logged against a ticket. Use `create_ticket_time_entry` to log new work (requires `time_spent` in "hh:mm" format, `note`, and `agent_id`). The optional `billable` flag marks whether the entry is billable. Use `update_ticket_time_entry` to modify an existing entry's time, note, or billable status. `delete_ticket_time_entry` permanently removes an entry (requires `full` mode).
+
+Equivalent tools exist for changes (`*_change_time_entry`).
+
 ### Filter query syntax
 
 The `filter_tickets` and `filter_changes` tools accept a query string with this syntax:

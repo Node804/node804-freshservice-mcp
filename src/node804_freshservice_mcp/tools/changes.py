@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response
+from ..client import get_client, parse_link_header, cached_response, api_error
 from ..models import ChangeStatus, ChangePriority, ChangeImpact, ChangeType, ChangeRisk
 
 
@@ -73,7 +73,7 @@ async def get_changes(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch changes: {e}"}
+        return api_error("Failed to fetch changes", e)
 
 
 @conditional_tool()
@@ -88,7 +88,7 @@ async def get_change_by_id(change_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch change: {e}"}
+        return api_error("Failed to fetch change", e)
 
 
 @conditional_tool()
@@ -186,7 +186,7 @@ async def create_change(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create change: {e}"}
+        return api_error("Failed to create change", e)
 
 
 @conditional_tool()
@@ -232,7 +232,7 @@ async def update_change(
             "change": response.json(),
         }
     except Exception as e:
-        return {"success": False, "error": f"Failed to update change: {e}"}
+        return {"success": False, **api_error("Failed to update change", e)}
 
 
 @conditional_tool()
@@ -266,7 +266,7 @@ async def delete_change(change_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete change: {e}"}
+        return api_error("Failed to delete change", e)
 
 
 @conditional_tool()
@@ -321,7 +321,7 @@ async def list_change_fields() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch change fields: {e}"}
+        return api_error("Failed to fetch change fields", e)
 
 
 @conditional_tool()
@@ -336,7 +336,7 @@ async def move_change(change_id: int, workspace_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to move change: {e}"}
+        return api_error("Failed to move change", e)
 
 
 # ============================================================
@@ -367,7 +367,7 @@ async def create_change_approval_group(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create approval group: {e}"}
+        return api_error("Failed to create approval group", e)
 
 
 @conditional_tool()
@@ -396,7 +396,7 @@ async def update_change_approval_group(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update approval group: {e}"}
+        return api_error("Failed to update approval group", e)
 
 
 @conditional_tool()
@@ -410,7 +410,7 @@ async def cancel_change_approval_group(change_id: int, group_id: int) -> Dict[st
         response.raise_for_status()
         return {"success": True, "message": "Approval group cancelled successfully"}
     except Exception as e:
-        return {"error": f"Failed to cancel approval group: {e}"}
+        return api_error("Failed to cancel approval group", e)
 
 
 @conditional_tool()
@@ -436,7 +436,7 @@ async def update_approval_chain_rule_change(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update approval chain: {e}"}
+        return api_error("Failed to update approval chain", e)
 
 
 @conditional_tool()
@@ -478,7 +478,7 @@ async def list_change_approval_groups(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch approval groups: {e}"}
+        return api_error("Failed to fetch approval groups", e)
 
 
 @conditional_tool()
@@ -492,7 +492,7 @@ async def view_change_approval(change_id: int, approval_id: int) -> Dict[str, An
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch approval: {e}"}
+        return api_error("Failed to fetch approval", e)
 
 
 @conditional_tool()
@@ -535,7 +535,7 @@ async def list_change_approvals(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch approvals: {e}"}
+        return api_error("Failed to fetch approvals", e)
 
 
 @conditional_tool()
@@ -552,7 +552,7 @@ async def send_change_approval_reminder(
         response.raise_for_status()
         return {"success": True, "message": "Reminder sent successfully"}
     except Exception as e:
-        return {"error": f"Failed to send approval reminder: {e}"}
+        return api_error("Failed to send approval reminder", e)
 
 
 @conditional_tool()
@@ -569,7 +569,7 @@ async def cancel_change_approval(
         response.raise_for_status()
         return {"success": True, "message": "Approval cancelled successfully"}
     except Exception as e:
-        return {"error": f"Failed to cancel approval: {e}"}
+        return api_error("Failed to cancel approval", e)
 
 
 # ============================================================
@@ -589,7 +589,7 @@ async def create_change_note(change_id: int, body: str) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create change note: {e}"}
+        return api_error("Failed to create change note", e)
 
 
 @conditional_tool()
@@ -601,7 +601,7 @@ async def view_change_note(change_id: int, note_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch change note: {e}"}
+        return api_error("Failed to fetch change note", e)
 
 
 @conditional_tool()
@@ -641,7 +641,7 @@ async def list_change_notes(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch change notes: {e}"}
+        return api_error("Failed to fetch change notes", e)
 
 
 @conditional_tool()
@@ -660,7 +660,7 @@ async def update_change_note(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update change note: {e}"}
+        return api_error("Failed to update change note", e)
 
 
 @conditional_tool()
@@ -674,7 +674,7 @@ async def delete_change_note(change_id: int, note_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete change note: {e}"}
+        return api_error("Failed to delete change note", e)
 
 
 # ============================================================
@@ -722,7 +722,7 @@ async def get_change_tasks(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch change tasks: {e}"}
+        return api_error("Failed to fetch change tasks", e)
 
 
 @conditional_tool()
@@ -769,7 +769,7 @@ async def create_change_task(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create change task: {e}"}
+        return api_error("Failed to create change task", e)
 
 
 @conditional_tool()
@@ -781,7 +781,7 @@ async def view_change_task(change_id: int, task_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch change task: {e}"}
+        return api_error("Failed to fetch change task", e)
 
 
 @conditional_tool()
@@ -800,7 +800,7 @@ async def update_change_task(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update change task: {e}"}
+        return api_error("Failed to update change task", e)
 
 
 @conditional_tool()
@@ -814,7 +814,7 @@ async def delete_change_task(change_id: int, task_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete change task: {e}"}
+        return api_error("Failed to delete change task", e)
 
 
 # ============================================================
@@ -856,7 +856,7 @@ async def create_change_time_entry(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create time entry: {e}"}
+        return api_error("Failed to create time entry", e)
 
 
 @conditional_tool()
@@ -873,7 +873,7 @@ async def view_change_time_entry(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch time entry: {e}"}
+        return api_error("Failed to fetch time entry", e)
 
 
 @conditional_tool()
@@ -915,7 +915,7 @@ async def list_change_time_entries(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch time entries: {e}"}
+        return api_error("Failed to fetch time entries", e)
 
 
 @conditional_tool()
@@ -941,7 +941,7 @@ async def update_change_time_entry(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update time entry: {e}"}
+        return api_error("Failed to update time entry", e)
 
 
 @conditional_tool()
@@ -960,4 +960,4 @@ async def delete_change_time_entry(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete time entry: {e}"}
+        return api_error("Failed to delete time entry", e)

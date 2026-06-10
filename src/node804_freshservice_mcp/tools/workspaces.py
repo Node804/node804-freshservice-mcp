@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 from ..server import conditional_tool
-from ..client import get_client, cached_response
+from ..client import get_client, cached_response, api_error
 
 
 @conditional_tool()
@@ -20,7 +20,7 @@ async def list_all_workspaces() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch workspaces: {e}"}
+        return api_error("Failed to fetch workspaces", e)
 
 
 @conditional_tool()
@@ -34,4 +34,4 @@ async def get_workspace(workspace_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch workspace: {e}"}
+        return api_error("Failed to fetch workspace", e)
