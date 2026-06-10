@@ -1,5 +1,11 @@
 # Freshservice MCP Server
 
+[![CI](https://github.com/Node804/node804-freshservice-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Node804/node804-freshservice-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/node804-freshservice-mcp)](https://pypi.org/project/node804-freshservice-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/node804-freshservice-mcp)](https://pypi.org/project/node804-freshservice-mcp/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+
 A configurable [MCP](https://modelcontextprotocol.io/) server for the [Freshservice](https://freshservice.com/) REST API with permission-based tool gating.
 
 Freshservice only provides a single API key per account with no scoping. This server addresses that by introducing a `FRESHSERVICE_MODE` environment variable that controls which tools are exposed. Blocked tools are excluded at registration time, so the LLM never sees them.
