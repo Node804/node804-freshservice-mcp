@@ -19,4 +19,4 @@ COPY src ./src
 RUN pip install --no-cache-dir .
 
 # Use python module entrypoint to start the MCP server
-ENTRYPOINT ["python", "-m", "freshservice_mcp.server"]
+ENTRYPOINT ["python", "-m", "node804_freshservice_mcp.server"]

@@ -144,6 +144,22 @@ def get_client() -> httpx.AsyncClient:
     return _client
 
 
+def api_error(message: str, exc: Exception) -> Dict[str, Any]:
+    """Build a tool error dict, surfacing the Freshservice response body.
+
+    Freshservice 4xx responses carry a JSON body explaining which field was
+    invalid — exactly what the LLM needs to self-correct. ``raise_for_status``
+    alone discards it, so attach it (truncated) alongside the status code.
+    """
+    err: Dict[str, Any] = {"error": f"{message}: {exc}"}
+    if isinstance(exc, httpx.HTTPStatusError):
+        err["status_code"] = exc.response.status_code
+        body = exc.response.text
+        if body:
+            err["api_response"] = body[:2000]
+    return err
+
+
 def parse_link_header(link_header: str) -> Dict[str, Optional[int]]:
     """Parse the Link header to extract pagination information.
 

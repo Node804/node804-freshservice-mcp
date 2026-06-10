@@ -15,7 +15,7 @@ import pytest
 
 def _import_cache():
     """Import cache class fresh (must happen after env vars are set by fixture)."""
-    from freshservice_mcp.client import TTLCache
+    from node804_freshservice_mcp.client import TTLCache
     return TTLCache
 
 
@@ -74,7 +74,7 @@ class TestTTLCache:
 class TestCachedResponse:
     @pytest.mark.asyncio
     async def test_caches_successful_response(self, mock_env):
-        from freshservice_mcp.client import cached_response, _response_cache
+        from node804_freshservice_mcp.client import cached_response, _response_cache
 
         _response_cache.clear()
         call_count = 0
@@ -94,7 +94,7 @@ class TestCachedResponse:
 
     @pytest.mark.asyncio
     async def test_does_not_cache_error_response(self, mock_env):
-        from freshservice_mcp.client import cached_response, _response_cache
+        from node804_freshservice_mcp.client import cached_response, _response_cache
 
         _response_cache.clear()
         call_count = 0
@@ -113,7 +113,7 @@ class TestCachedResponse:
 
     @pytest.mark.asyncio
     async def test_cache_key_includes_args(self, mock_env):
-        from freshservice_mcp.client import cached_response, _response_cache
+        from node804_freshservice_mcp.client import cached_response, _response_cache
 
         _response_cache.clear()
         call_count = 0
@@ -149,8 +149,8 @@ def _make_response(status_code: int, headers: dict = None) -> httpx.Response:
 class TestRateLimitTransport:
     @pytest.mark.asyncio
     async def test_passes_through_normal_response(self, mock_env):
-        from freshservice_mcp.client import RateLimitTransport
-        import freshservice_mcp.client as client_mod
+        from node804_freshservice_mcp.client import RateLimitTransport
+        import node804_freshservice_mcp.client as client_mod
 
         inner = AsyncMock()
         inner.handle_async_request.return_value = _make_response(
@@ -168,7 +168,7 @@ class TestRateLimitTransport:
 
     @pytest.mark.asyncio
     async def test_retries_on_429(self, mock_env):
-        from freshservice_mcp.client import RateLimitTransport
+        from node804_freshservice_mcp.client import RateLimitTransport
 
         inner = AsyncMock()
         # First call returns 429, second returns 200
@@ -186,7 +186,7 @@ class TestRateLimitTransport:
 
     @pytest.mark.asyncio
     async def test_exhausts_retries(self, mock_env):
-        from freshservice_mcp.client import RateLimitTransport
+        from node804_freshservice_mcp.client import RateLimitTransport
 
         inner = AsyncMock()
         # All calls return 429
@@ -204,8 +204,8 @@ class TestRateLimitTransport:
 
     @pytest.mark.asyncio
     async def test_updates_rate_limit_on_every_response(self, mock_env):
-        from freshservice_mcp.client import RateLimitTransport
-        import freshservice_mcp.client as client_mod
+        from node804_freshservice_mcp.client import RateLimitTransport
+        import node804_freshservice_mcp.client as client_mod
 
         inner = AsyncMock()
         inner.handle_async_request.return_value = _make_response(

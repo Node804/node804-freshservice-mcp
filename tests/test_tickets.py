@@ -56,16 +56,16 @@ LIST_CHOICES = [
 class TestGetTicketStatuses:
     @pytest.mark.asyncio
     async def test_standard_statuses_dict(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         fake_fields = _make_ticket_fields_response(STANDARD_CHOICES_DICT)
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value=fake_fields,
         ):
@@ -78,16 +78,16 @@ class TestGetTicketStatuses:
 
     @pytest.mark.asyncio
     async def test_custom_statuses_classified_unresolved(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         fake_fields = _make_ticket_fields_response(CUSTOM_CHOICES_DICT)
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value=fake_fields,
         ):
@@ -101,16 +101,16 @@ class TestGetTicketStatuses:
 
     @pytest.mark.asyncio
     async def test_list_format_choices(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         fake_fields = _make_ticket_fields_response(LIST_CHOICES)
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value=fake_fields,
         ):
@@ -122,14 +122,14 @@ class TestGetTicketStatuses:
 
     @pytest.mark.asyncio
     async def test_propagates_error_from_get_ticket_fields(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value={"error": "Failed to fetch ticket fields: timeout"},
         ):
@@ -140,11 +140,11 @@ class TestGetTicketStatuses:
 
     @pytest.mark.asyncio
     async def test_missing_status_field(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         fake_fields = {
             "ticket_fields": [
@@ -154,7 +154,7 @@ class TestGetTicketStatuses:
         }
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value=fake_fields,
         ):
@@ -165,16 +165,16 @@ class TestGetTicketStatuses:
 
     @pytest.mark.asyncio
     async def test_each_status_has_category(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_ticket_statuses
+        from node804_freshservice_mcp.tools.tickets import get_ticket_statuses
 
         fake_fields = _make_ticket_fields_response(STANDARD_CHOICES_DICT)
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_ticket_fields",
+            "node804_freshservice_mcp.tools.tickets.get_ticket_fields",
             new_callable=AsyncMock,
             return_value=fake_fields,
         ):
@@ -224,27 +224,27 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_unresolved_default(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         mock_client = AsyncMock()
         mock_client.get.return_value = self._make_mock_response(FAKE_FILTER_RESPONSE)
 
         with (
             patch(
-                "freshservice_mcp.tools.tickets.get_client",
+                "node804_freshservice_mcp.tools.tickets.get_client",
                 return_value=mock_client,
             ),
             patch(
-                "freshservice_mcp.tools.agents.get_current_agent",
+                "node804_freshservice_mcp.tools.agents.get_current_agent",
                 new_callable=AsyncMock,
                 return_value=FAKE_AGENT,
             ),
             patch(
-                "freshservice_mcp.tools.tickets.get_ticket_statuses",
+                "node804_freshservice_mcp.tools.tickets.get_ticket_statuses",
                 new_callable=AsyncMock,
                 return_value=FAKE_STATUSES,
             ),
@@ -261,11 +261,11 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_resolved_filter(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         mock_client = AsyncMock()
         mock_client.get.return_value = self._make_mock_response(
@@ -274,16 +274,16 @@ class TestGetMyTickets:
 
         with (
             patch(
-                "freshservice_mcp.tools.tickets.get_client",
+                "node804_freshservice_mcp.tools.tickets.get_client",
                 return_value=mock_client,
             ),
             patch(
-                "freshservice_mcp.tools.agents.get_current_agent",
+                "node804_freshservice_mcp.tools.agents.get_current_agent",
                 new_callable=AsyncMock,
                 return_value=FAKE_AGENT,
             ),
             patch(
-                "freshservice_mcp.tools.tickets.get_ticket_statuses",
+                "node804_freshservice_mcp.tools.tickets.get_ticket_statuses",
                 new_callable=AsyncMock,
                 return_value=FAKE_STATUSES,
             ),
@@ -297,11 +297,11 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_all_filter_skips_status_lookup(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         mock_client = AsyncMock()
         mock_client.get.return_value = self._make_mock_response(FAKE_FILTER_RESPONSE)
@@ -310,16 +310,16 @@ class TestGetMyTickets:
 
         with (
             patch(
-                "freshservice_mcp.tools.tickets.get_client",
+                "node804_freshservice_mcp.tools.tickets.get_client",
                 return_value=mock_client,
             ),
             patch(
-                "freshservice_mcp.tools.agents.get_current_agent",
+                "node804_freshservice_mcp.tools.agents.get_current_agent",
                 new_callable=AsyncMock,
                 return_value=FAKE_AGENT,
             ),
             patch(
-                "freshservice_mcp.tools.tickets.get_ticket_statuses",
+                "node804_freshservice_mcp.tools.tickets.get_ticket_statuses",
                 statuses_mock,
             ),
         ):
@@ -332,11 +332,11 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_invalid_status_filter(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         result = await get_my_tickets(status_filter="invalid")
         assert "error" in result
@@ -344,14 +344,14 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_agent_error_propagates(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         with patch(
-            "freshservice_mcp.tools.agents.get_current_agent",
+            "node804_freshservice_mcp.tools.agents.get_current_agent",
             new_callable=AsyncMock,
             return_value={"error": "Failed to fetch current agent: timeout"},
         ):
@@ -362,27 +362,27 @@ class TestGetMyTickets:
 
     @pytest.mark.asyncio
     async def test_pagination_passed_through(self, mock_env):
-        from freshservice_mcp.client import _response_cache
+        from node804_freshservice_mcp.client import _response_cache
 
         _response_cache.clear()
 
-        from freshservice_mcp.tools.tickets import get_my_tickets
+        from node804_freshservice_mcp.tools.tickets import get_my_tickets
 
         mock_client = AsyncMock()
         mock_client.get.return_value = self._make_mock_response(FAKE_FILTER_RESPONSE)
 
         with (
             patch(
-                "freshservice_mcp.tools.tickets.get_client",
+                "node804_freshservice_mcp.tools.tickets.get_client",
                 return_value=mock_client,
             ),
             patch(
-                "freshservice_mcp.tools.agents.get_current_agent",
+                "node804_freshservice_mcp.tools.agents.get_current_agent",
                 new_callable=AsyncMock,
                 return_value=FAKE_AGENT,
             ),
             patch(
-                "freshservice_mcp.tools.tickets.get_ticket_statuses",
+                "node804_freshservice_mcp.tools.tickets.get_ticket_statuses",
                 new_callable=AsyncMock,
                 return_value=FAKE_STATUSES,
             ),
@@ -410,7 +410,7 @@ class TestAddTicketAttachment:
 
     @pytest.mark.asyncio
     async def test_file_not_found(self, mock_env):
-        from freshservice_mcp.tools.tickets import add_ticket_attachment
+        from node804_freshservice_mcp.tools.tickets import add_ticket_attachment
 
         result = await add_ticket_attachment(
             ticket_id=1,
@@ -421,7 +421,7 @@ class TestAddTicketAttachment:
 
     @pytest.mark.asyncio
     async def test_successful_upload(self, mock_env, tmp_path):
-        from freshservice_mcp.tools.tickets import add_ticket_attachment
+        from node804_freshservice_mcp.tools.tickets import add_ticket_attachment
 
         # Create a temp file
         test_file = tmp_path / "test.txt"
@@ -432,7 +432,7 @@ class TestAddTicketAttachment:
         )
 
         with patch(
-            "freshservice_mcp.tools.tickets.multipart_request",
+            "node804_freshservice_mcp.tools.tickets.multipart_request",
             new_callable=AsyncMock,
             return_value=fake_response,
         ) as mock_req:
@@ -459,7 +459,7 @@ class TestAddNoteAttachment:
 
     @pytest.mark.asyncio
     async def test_empty_body(self, mock_env):
-        from freshservice_mcp.tools.tickets import add_note_attachment
+        from node804_freshservice_mcp.tools.tickets import add_note_attachment
 
         result = await add_note_attachment(
             ticket_id=1,
@@ -471,7 +471,7 @@ class TestAddNoteAttachment:
 
     @pytest.mark.asyncio
     async def test_successful_note_with_attachment(self, mock_env, tmp_path):
-        from freshservice_mcp.tools.tickets import add_note_attachment
+        from node804_freshservice_mcp.tools.tickets import add_note_attachment
 
         test_file = tmp_path / "report.pdf"
         test_file.write_bytes(b"%PDF-fake-content")
@@ -481,7 +481,7 @@ class TestAddNoteAttachment:
         )
 
         with patch(
-            "freshservice_mcp.tools.tickets.multipart_request",
+            "node804_freshservice_mcp.tools.tickets.multipart_request",
             new_callable=AsyncMock,
             return_value=fake_response,
         ) as mock_req:
@@ -508,7 +508,7 @@ class TestAddReplyAttachment:
 
     @pytest.mark.asyncio
     async def test_empty_body(self, mock_env):
-        from freshservice_mcp.tools.tickets import add_reply_attachment
+        from node804_freshservice_mcp.tools.tickets import add_reply_attachment
 
         result = await add_reply_attachment(
             ticket_id=1,
@@ -519,7 +519,7 @@ class TestAddReplyAttachment:
 
     @pytest.mark.asyncio
     async def test_successful_reply_with_attachment(self, mock_env, tmp_path):
-        from freshservice_mcp.tools.tickets import add_reply_attachment
+        from node804_freshservice_mcp.tools.tickets import add_reply_attachment
 
         test_file = tmp_path / "screenshot.png"
         test_file.write_bytes(b"\x89PNG fake")
@@ -529,7 +529,7 @@ class TestAddReplyAttachment:
         )
 
         with patch(
-            "freshservice_mcp.tools.tickets.multipart_request",
+            "node804_freshservice_mcp.tools.tickets.multipart_request",
             new_callable=AsyncMock,
             return_value=fake_response,
         ) as mock_req:
@@ -548,7 +548,7 @@ class TestAddReplyAttachment:
 class TestListTicketAttachments:
     @pytest.mark.asyncio
     async def test_list_attachments(self, mock_env):
-        from freshservice_mcp.tools.tickets import list_ticket_attachments
+        from node804_freshservice_mcp.tools.tickets import list_ticket_attachments
 
         fake_attachments = [
             {"id": 10, "name": "doc.pdf", "size": 1024},
@@ -565,7 +565,7 @@ class TestListTicketAttachments:
         mock_client.get.return_value = mock_response
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_client",
+            "node804_freshservice_mcp.tools.tickets.get_client",
             return_value=mock_client,
         ):
             result = await list_ticket_attachments(ticket_id=1)
@@ -579,7 +579,7 @@ class TestListTicketAttachments:
 class TestDeleteTicketAttachment:
     @pytest.mark.asyncio
     async def test_successful_delete(self, mock_env):
-        from freshservice_mcp.tools.tickets import delete_ticket_attachment
+        from node804_freshservice_mcp.tools.tickets import delete_ticket_attachment
 
         mock_response = MagicMock()
         mock_response.status_code = 204
@@ -588,7 +588,7 @@ class TestDeleteTicketAttachment:
         mock_client.delete.return_value = mock_response
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_client",
+            "node804_freshservice_mcp.tools.tickets.get_client",
             return_value=mock_client,
         ):
             result = await delete_ticket_attachment(ticket_id=1, attachment_id=10)
@@ -602,7 +602,7 @@ class TestDeleteTicketAttachment:
 class TestDeleteConversationAttachment:
     @pytest.mark.asyncio
     async def test_successful_delete(self, mock_env):
-        from freshservice_mcp.tools.tickets import delete_conversation_attachment
+        from node804_freshservice_mcp.tools.tickets import delete_conversation_attachment
 
         mock_response = MagicMock()
         mock_response.status_code = 204
@@ -611,7 +611,7 @@ class TestDeleteConversationAttachment:
         mock_client.delete.return_value = mock_response
 
         with patch(
-            "freshservice_mcp.tools.tickets.get_client",
+            "node804_freshservice_mcp.tools.tickets.get_client",
             return_value=mock_client,
         ):
             result = await delete_conversation_attachment(

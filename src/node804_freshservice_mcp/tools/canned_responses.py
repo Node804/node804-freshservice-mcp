@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response
+from ..client import get_client, parse_link_header, cached_response, api_error
 
 
 @conditional_tool()
@@ -44,7 +44,7 @@ async def get_all_canned_response(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch canned responses: {e}"}
+        return api_error("Failed to fetch canned responses", e)
 
 
 @conditional_tool()
@@ -60,7 +60,7 @@ async def get_canned_response(canned_response_id: int) -> Dict[str, Any]:
             return response.json()
         return {"error": "No content returned for the requested canned response."}
     except Exception as e:
-        return {"error": f"Failed to fetch canned response: {e}"}
+        return api_error("Failed to fetch canned response", e)
 
 
 @conditional_tool()
@@ -102,7 +102,7 @@ async def list_all_canned_response_folder(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch canned response folders: {e}"}
+        return api_error("Failed to fetch canned response folders", e)
 
 
 @conditional_tool()
@@ -116,4 +116,4 @@ async def list_canned_response_folder(folder_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch canned response folder: {e}"}
+        return api_error("Failed to fetch canned response folder", e)

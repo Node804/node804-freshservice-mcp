@@ -8,7 +8,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response, multipart_request, FRESHSERVICE_DOMAIN
+from ..client import get_client, parse_link_header, cached_response, multipart_request, FRESHSERVICE_DOMAIN, api_error
 from ..models import TicketSource, TicketStatus, TicketPriority
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ async def get_ticket_fields() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch ticket fields: {e}"}
+        return api_error("Failed to fetch ticket fields", e)
 
 
 @conditional_tool()
@@ -216,7 +216,7 @@ async def get_my_tickets(
             "page": page,
         }
     except Exception as e:
-        return {"error": f"Failed to fetch tickets: {e}"}
+        return api_error("Failed to fetch tickets", e)
 
 
 @conditional_tool()
@@ -257,7 +257,7 @@ async def get_tickets(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch tickets: {e}"}
+        return api_error("Failed to fetch tickets", e)
 
 
 @conditional_tool()
@@ -272,7 +272,7 @@ async def get_ticket_by_id(ticket_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch ticket: {e}"}
+        return api_error("Failed to fetch ticket", e)
 
 
 @conditional_tool()
@@ -284,6 +284,8 @@ async def create_ticket(
     status: Union[int, str],
     email: Optional[str] = None,
     requester_id: Optional[int] = None,
+    group_id: Optional[int] = None,
+    responder_id: Optional[int] = None,
     custom_fields: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create a new ticket in Freshservice.
@@ -293,12 +295,14 @@ async def create_ticket(
     Args:
         subject: Ticket subject line
         description: Ticket body (HTML supported)
-        source: Origin channel — 1=Email, 2=Portal, 3=Phone, 7=Yammer,
-                9=Feedback Widget, 10=Outbound Email
+        source: Origin channel — 1=Email, 2=Portal, 3=Phone, 6=Yammer,
+                7=Chat, 9=Walk-up, 10=Slack
         priority: 1=Low, 2=Medium, 3=High, 4=Urgent
         status: 2=Open, 3=Pending, 4=Resolved, 5=Closed
         email: Requester email (creates requester if new)
         requester_id: Existing requester ID (alternative to email)
+        group_id: ID of the group to assign the ticket to
+        responder_id: ID of the agent to assign the ticket to
         custom_fields: Dict of custom field name→value pairs"""
     if not email and not requester_id:
         return {"error": "Either email or requester_id must be provided"}
@@ -328,6 +332,10 @@ async def create_ticket(
         data["email"] = email
     if requester_id:
         data["requester_id"] = requester_id
+    if group_id is not None:
+        data["group_id"] = group_id
+    if responder_id is not None:
+        data["responder_id"] = responder_id
     if custom_fields:
         data["custom_fields"] = custom_fields
 
@@ -337,7 +345,7 @@ async def create_ticket(
         response.raise_for_status()
         return {"success": True, "ticket": response.json()}
     except Exception as e:
-        return {"error": f"Failed to create ticket: {e}"}
+        return api_error("Failed to create ticket", e)
 
 
 @conditional_tool()
@@ -350,10 +358,14 @@ async def update_ticket(
     Args:
         ticket_id: The ticket to update
         ticket_fields: Dict of field name→value pairs.  Common fields:
-            status, priority, agent_id, group_id, subject, description.
+            status, priority, responder_id, group_id, subject, description.
+            Use responder_id (not agent_id) to assign an agent.
             Nest custom fields under a "custom_fields" key."""
     if not ticket_fields:
         return {"error": "No fields provided for update"}
+
+    if "agent_id" in ticket_fields and "responder_id" not in ticket_fields:
+        ticket_fields["responder_id"] = ticket_fields.pop("agent_id")
 
     custom_fields = ticket_fields.pop("custom_fields", {})
     update_data = dict(ticket_fields)
@@ -370,7 +382,7 @@ async def update_ticket(
             "ticket": response.json(),
         }
     except Exception as e:
-        return {"success": False, "error": f"Failed to update ticket: {e}"}
+        return {"success": False, **api_error("Failed to update ticket", e)}
 
 
 @conditional_tool()
@@ -408,7 +420,7 @@ async def filter_tickets(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to filter tickets: {e}"}
+        return api_error("Failed to filter tickets", e)
 
 
 @conditional_tool()
@@ -422,7 +434,7 @@ async def delete_ticket(ticket_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete ticket: {e}"}
+        return api_error("Failed to delete ticket", e)
 
 
 # --- Ticket Conversations ---
@@ -484,7 +496,7 @@ async def send_ticket_reply(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to send ticket reply: {e}"}
+        return api_error("Failed to send ticket reply", e)
 
 
 @conditional_tool()
@@ -505,7 +517,7 @@ async def create_ticket_note(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create ticket note: {e}"}
+        return api_error("Failed to create ticket note", e)
 
 
 @conditional_tool()
@@ -526,7 +538,7 @@ async def update_ticket_conversation(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update conversation: {e}"}
+        return api_error("Failed to update conversation", e)
 
 
 @conditional_tool()
@@ -570,7 +582,7 @@ async def list_all_ticket_conversation(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch ticket conversations: {e}"}
+        return api_error("Failed to fetch ticket conversations", e)
 
 
 # --- Ticket Attachments ---
@@ -625,7 +637,7 @@ async def add_ticket_attachment(
             return {"error": f"HTTP {response.status_code}: {detail}"}
         return {"success": True, "ticket": response.json()}
     except Exception as e:
-        return {"error": f"Failed to add attachment to ticket: {e}"}
+        return api_error("Failed to add attachment to ticket", e)
 
 
 @conditional_tool()
@@ -666,7 +678,7 @@ async def add_note_attachment(
             return {"error": f"HTTP {response.status_code}: {detail}"}
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create note with attachment: {e}"}
+        return api_error("Failed to create note with attachment", e)
 
 
 @conditional_tool()
@@ -710,7 +722,7 @@ async def add_reply_attachment(
             return {"error": f"HTTP {response.status_code}: {detail}"}
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to send reply with attachment: {e}"}
+        return api_error("Failed to send reply with attachment", e)
 
 
 @conditional_tool()
@@ -740,7 +752,7 @@ async def list_ticket_attachments(
             "count": len(attachments),
         }
     except Exception as e:
-        return {"error": f"Failed to list ticket attachments: {e}"}
+        return api_error("Failed to list ticket attachments", e)
 
 
 @conditional_tool()
@@ -765,7 +777,7 @@ async def delete_ticket_attachment(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete ticket attachment: {e}"}
+        return api_error("Failed to delete ticket attachment", e)
 
 
 @conditional_tool()
@@ -791,4 +803,157 @@ async def delete_conversation_attachment(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to delete conversation attachment: {e}"}
+        return api_error("Failed to delete conversation attachment", e)
+
+
+# ---------------------------------------------------------------------------
+# Time Entries
+# ---------------------------------------------------------------------------
+
+
+@conditional_tool()
+async def create_ticket_time_entry(
+    ticket_id: int,
+    time_spent: str,
+    note: str,
+    agent_id: int,
+    billable: Optional[bool] = None,
+    executed_at: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a time entry for a ticket.
+
+    Args:
+        ticket_id: The ID of the ticket
+        time_spent: Time spent in format "hh:mm" (e.g., "02:30")
+        note: Description of the work done
+        agent_id: ID of the agent who performed the work
+        billable: Whether the time entry is billable
+        executed_at: When the work was done (ISO format)
+    """
+    data: Dict[str, Any] = {
+        "time_spent": time_spent,
+        "note": note,
+        "agent_id": agent_id,
+    }
+    if billable is not None:
+        data["billable"] = billable
+    if executed_at:
+        data["executed_at"] = executed_at
+
+    client = get_client()
+    try:
+        response = await client.post(
+            f"/api/v2/tickets/{ticket_id}/time_entries",
+            json=data,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to create time entry", e)
+
+
+@conditional_tool()
+async def view_ticket_time_entry(
+    ticket_id: int,
+    time_entry_id: int,
+) -> Dict[str, Any]:
+    """Fetch a single time entry by its time_entry_id within a ticket."""
+    client = get_client()
+    try:
+        response = await client.get(
+            f"/api/v2/tickets/{ticket_id}/time_entries/{time_entry_id}"
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to fetch time entry", e)
+
+
+@conditional_tool()
+async def list_ticket_time_entries(
+    ticket_id: int,
+    page: int = 1,
+    per_page: int = 30,
+) -> Dict[str, Any]:
+    """List all logged time entries for a ticket.
+
+    Each entry includes agent, time_spent, note, and execution date.
+
+    Args:
+        ticket_id: The ticket to inspect
+        page: Page number (default: 1)
+        per_page: Items per page (1-100, default: 30)"""
+    if page < 1:
+        return {"error": "Page number must be greater than 0"}
+    if per_page < 1 or per_page > 100:
+        return {"error": "Page size must be between 1 and 100"}
+
+    client = get_client()
+    try:
+        response = await client.get(
+            f"/api/v2/tickets/{ticket_id}/time_entries",
+            params={"page": page, "per_page": per_page},
+        )
+        response.raise_for_status()
+
+        pagination_info = parse_link_header(response.headers.get("Link", ""))
+        return {
+            "time_entries": response.json(),
+            "pagination": {
+                "current_page": page,
+                "per_page": per_page,
+                "next_page": pagination_info.get("next"),
+                "prev_page": pagination_info.get("prev"),
+                "has_more": pagination_info.get("next") is not None,
+            },
+        }
+    except Exception as e:
+        return api_error("Failed to fetch time entries", e)
+
+
+@conditional_tool()
+async def update_ticket_time_entry(
+    ticket_id: int,
+    time_entry_id: int,
+    time_spent: Optional[str] = None,
+    note: Optional[str] = None,
+    billable: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Edit the time_spent, note, or billable flag on an existing time entry."""
+    data: Dict[str, Any] = {}
+    if time_spent is not None:
+        data["time_spent"] = time_spent
+    if note is not None:
+        data["note"] = note
+    if billable is not None:
+        data["billable"] = billable
+
+    client = get_client()
+    try:
+        response = await client.put(
+            f"/api/v2/tickets/{ticket_id}/time_entries/{time_entry_id}",
+            json=data,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to update time entry", e)
+
+
+@conditional_tool()
+async def delete_ticket_time_entry(
+    ticket_id: int,
+    time_entry_id: int,
+) -> Dict[str, Any]:
+    """Permanently delete a time entry from a ticket."""
+    client = get_client()
+    try:
+        response = await client.delete(
+            f"/api/v2/tickets/{ticket_id}/time_entries/{time_entry_id}"
+        )
+        if response.status_code == 204:
+            return {"success": True, "message": "Time entry deleted successfully"}
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to delete time entry", e)

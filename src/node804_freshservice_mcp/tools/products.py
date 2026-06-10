@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional, Union
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header
+from ..client import get_client, parse_link_header, api_error
 
 
 @conditional_tool()
@@ -44,7 +44,7 @@ async def get_all_products(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch products: {e}"}
+        return api_error("Failed to fetch products", e)
 
 
 @conditional_tool()
@@ -58,7 +58,7 @@ async def get_product_by_id(product_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch product: {e}"}
+        return api_error("Failed to fetch product", e)
 
 
 @conditional_tool()
@@ -120,7 +120,7 @@ async def create_product(
         response.raise_for_status()
         return {"success": True, "data": response.json()}
     except Exception as e:
-        return {"error": f"Failed to create product: {e}"}
+        return api_error("Failed to create product", e)
 
 
 @conditional_tool()
@@ -181,4 +181,4 @@ async def update_product(
         response.raise_for_status()
         return {"success": True, "data": response.json()}
     except Exception as e:
-        return {"error": f"Failed to update product: {e}"}
+        return api_error("Failed to update product", e)

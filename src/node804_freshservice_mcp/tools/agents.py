@@ -4,7 +4,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header, cached_response
+from ..client import get_client, parse_link_header, cached_response, api_error
 from ..models import AgentInput
 
 
@@ -23,7 +23,7 @@ async def get_current_agent() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch current agent: {e}"}
+        return api_error("Failed to fetch current agent", e)
 
 
 @conditional_tool()
@@ -56,7 +56,7 @@ async def create_agent(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create agent: {e}"}
+        return api_error("Failed to create agent", e)
 
 
 @conditional_tool()
@@ -70,7 +70,7 @@ async def get_agent(agent_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch agent: {e}"}
+        return api_error("Failed to fetch agent", e)
 
 
 @conditional_tool()
@@ -110,7 +110,7 @@ async def get_all_agents(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch agents: {e}"}
+        return api_error("Failed to fetch agents", e)
 
 
 @conditional_tool()
@@ -158,7 +158,7 @@ async def filter_agents(
             "capped": pages_fetched >= max_pages,
         }
     except Exception as e:
-        return {"error": f"Failed to filter agents: {e}"}
+        return api_error("Failed to filter agents", e)
 
 
 @conditional_tool()
@@ -202,7 +202,7 @@ async def update_agent(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update agent: {e}"}
+        return api_error("Failed to update agent", e)
 
 
 @conditional_tool()
@@ -218,4 +218,4 @@ async def get_agent_fields() -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch agent fields: {e}"}
+        return api_error("Failed to fetch agent fields", e)

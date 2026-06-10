@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 from ..server import conditional_tool
-from ..client import get_client, parse_link_header
+from ..client import get_client, parse_link_header, api_error
 from ..models import GroupCreate
 
 
@@ -47,7 +47,7 @@ async def get_all_agent_groups(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch agent groups: {e}"}
+        return api_error("Failed to fetch agent groups", e)
 
 
 @conditional_tool()
@@ -61,7 +61,7 @@ async def get_agent_group_by_id(group_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch agent group: {e}"}
+        return api_error("Failed to fetch agent group", e)
 
 
 @conditional_tool()
@@ -76,7 +76,7 @@ async def create_group(group_data: Dict[str, Any]) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create group: {e}"}
+        return api_error("Failed to create group", e)
 
 
 @conditional_tool()
@@ -89,7 +89,7 @@ async def update_group(
         validated_fields = GroupCreate(**group_fields)
         group_data = validated_fields.model_dump(exclude_none=True)
     except Exception as e:
-        return {"error": f"Validation error: {e}"}
+        return api_error("Validation error", e)
 
     client = get_client()
     try:
@@ -97,7 +97,7 @@ async def update_group(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update group: {e}"}
+        return api_error("Failed to update group", e)
 
 
 # --- Requester Groups ---
@@ -134,7 +134,7 @@ async def get_all_requester_groups(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch requester groups: {e}"}
+        return api_error("Failed to fetch requester groups", e)
 
 
 @conditional_tool()
@@ -146,7 +146,7 @@ async def get_requester_groups_by_id(requester_group_id: int) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to fetch requester group: {e}"}
+        return api_error("Failed to fetch requester group", e)
 
 
 @conditional_tool()
@@ -165,7 +165,7 @@ async def create_requester_group(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to create requester group: {e}"}
+        return api_error("Failed to create requester group", e)
 
 
 @conditional_tool()
@@ -193,7 +193,7 @@ async def update_requester_group(
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        return {"error": f"Failed to update requester group: {e}"}
+        return api_error("Failed to update requester group", e)
 
 
 @conditional_tool()
@@ -233,7 +233,7 @@ async def list_requester_group_members(
             },
         }
     except Exception as e:
-        return {"error": f"Failed to fetch requester group members: {e}"}
+        return api_error("Failed to fetch requester group members", e)
 
 
 @conditional_tool()
@@ -252,4 +252,4 @@ async def add_requester_to_group(
         response.raise_for_status()
         return {"success": True, "message": f"Requester {requester_id} added to group {group_id}."}
     except Exception as e:
-        return {"error": f"Failed to add requester to group: {e}"}
+        return api_error("Failed to add requester to group", e)

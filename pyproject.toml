@@ -1,32 +1,30 @@
 [project]
-name = "freshservice-mcp"
-version = "1.1.0"
+name = "node804-freshservice-mcp"
+version = "1.2.0"
 description = "A configurable MCP server for Freshservice with permission modes"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
     "build>=1.2.2.post1",
     "httpx==0.28.1",
     "mcp[cli]>=1.3.0",
+    "node804-mcp-toolkit>=0.1.0",
     "pydantic>=2.10.6",
     "python-dotenv>=1.0.0",
 ]
 
 [[project.authors]]
-name = "Gopi Krishnan"
-email = "gopi@effy.co.in"
+name = "Michael Pope"
+email = "me@michaelpope.cv"
 
-[[project.authors]]
-name = "Maanaesh Swamy"
-email = "maanaesh.s@effy.co.in"
-
-[[project.authors]]
-name = "Vijay Ragunath"
-email = "vijay.r@effy.co.in"
+[project.urls]
+Homepage = "https://github.com/epopleachim/node804-freshservice-mcp"
+Repository = "https://github.com/epopleachim/node804-freshservice-mcp"
+Issues = "https://github.com/epopleachim/node804-freshservice-mcp/issues"
 
 [project.scripts]
-freshservice-mcp = "freshservice_mcp.server:main"
+node804-freshservice-mcp = "node804_freshservice_mcp.server:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
@@ -36,4 +34,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/freshservice_mcp"]
+packages = ["src/node804_freshservice_mcp"]
+
+# TODO: remove this dev-only source override once node804-mcp-toolkit is
+# published to PyPI, then re-run `uv lock`. Source overrides are ignored by
+# consumers installing this package from PyPI.
+[tool.uv.sources]
+node804-mcp-toolkit = { path = "../mcp-toolkit-py", editable = true }

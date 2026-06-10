@@ -8,16 +8,16 @@ class TestFindFile:
 
     @pytest.mark.asyncio
     async def test_empty_query_returns_error(self, monkeypatch):
-        monkeypatch.setattr("freshservice_mcp.tools.files._SEARCH_PATHS_RAW", "C:\\fake")
-        from freshservice_mcp.tools.files import find_file
+        monkeypatch.setattr("node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW", "C:\\fake")
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="")
         assert "error" in result
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
     async def test_no_search_paths_configured(self, monkeypatch):
-        monkeypatch.setattr("freshservice_mcp.tools.files._SEARCH_PATHS_RAW", "")
-        from freshservice_mcp.tools.files import find_file
+        monkeypatch.setattr("node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW", "")
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="test.txt")
         assert "error" in result
         assert "FRESHSERVICE_FILE_SEARCH_PATHS" in result["error"]
@@ -29,10 +29,10 @@ class TestFindFile:
         (tmp_path / "notes.txt").write_text("notes")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="report")
 
         assert "error" not in result
@@ -45,10 +45,10 @@ class TestFindFile:
         (tmp_path / "MyReport.PDF").write_text("data")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="myreport")
 
         assert result["count"] == 1
@@ -60,10 +60,10 @@ class TestFindFile:
         (tmp_path / "readme.md").write_text("hi")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="*.csv")
 
         assert result["count"] == 1
@@ -76,10 +76,10 @@ class TestFindFile:
         (subdir / "nested.txt").write_text("deep file")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="nested", recursive=True)
 
         assert result["count"] == 1
@@ -92,10 +92,10 @@ class TestFindFile:
         (tmp_path / "top.txt").write_text("top")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="nested", recursive=False)
 
         assert result["count"] == 0
@@ -106,10 +106,10 @@ class TestFindFile:
             (tmp_path / f"file_{i}.txt").write_text(f"content {i}")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="file_", max_results=3)
 
         assert result["count"] == 3
@@ -123,10 +123,10 @@ class TestFindFile:
         forbidden.mkdir()
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(allowed),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="*", search_paths=[str(forbidden)])
 
         assert "error" in result
@@ -137,10 +137,10 @@ class TestFindFile:
         (tmp_path / "doc.txt").write_text("hello")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="doc")
 
         f = result["files"][0]
@@ -155,10 +155,10 @@ class TestFindFile:
         (tmp_path / "readme.md").write_text("hi")
 
         monkeypatch.setattr(
-            "freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
+            "node804_freshservice_mcp.tools.files._SEARCH_PATHS_RAW",
             str(tmp_path),
         )
-        from freshservice_mcp.tools.files import find_file
+        from node804_freshservice_mcp.tools.files import find_file
         result = await find_file(query="nonexistent")
 
         assert result["count"] == 0
