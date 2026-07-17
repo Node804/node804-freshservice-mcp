@@ -16,12 +16,12 @@ dependencies = [
 
 [[project.authors]]
 name = "Michael Pope"
-email = "me@michaelpope.cv"
+email = "code@node804.com"
 
 [project.urls]
-Homepage = "https://github.com/epopleachim/node804-freshservice-mcp"
-Repository = "https://github.com/epopleachim/node804-freshservice-mcp"
-Issues = "https://github.com/epopleachim/node804-freshservice-mcp/issues"
+Homepage = "https://github.com/Node804/node804-freshservice-mcp"
+Repository = "https://github.com/Node804/node804-freshservice-mcp"
+Issues = "https://github.com/Node804/node804-freshservice-mcp/issues"
 
 [project.scripts]
 node804-freshservice-mcp = "node804_freshservice_mcp.server:main"
