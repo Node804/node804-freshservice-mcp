@@ -32,6 +32,8 @@ TOOL_PERMISSIONS = {
     "list_ticket_attachments": "read",
     "list_ticket_time_entries": "read",
     "view_ticket_time_entry": "read",
+    "list_ticket_approvals": "read",
+    "view_ticket_approval": "read",
 
     # === TICKETS: WRITE ===
     "create_ticket": "standard",

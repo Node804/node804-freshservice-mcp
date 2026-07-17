@@ -957,3 +957,65 @@ async def delete_ticket_time_entry(
         return response.json()
     except Exception as e:
         return api_error("Failed to delete time entry", e)
+
+
+# ============================================================
+# Ticket Approvals
+# ============================================================
+
+
+@conditional_tool()
+async def list_ticket_approvals(
+    ticket_id: int,
+    page: int = 1,
+    per_page: int = 30,
+) -> Dict[str, Any]:
+    """List all approval records for a ticket.
+
+    Returns each approver along with their approval stage and current
+    decision (requested, approved, rejected).
+
+    Args:
+        ticket_id: The ticket to inspect
+        page: Page number (default: 1)
+        per_page: Items per page (1-100, default: 30)"""
+    if page < 1:
+        return {"error": "Page number must be greater than 0"}
+    if per_page < 1 or per_page > 100:
+        return {"error": "Page size must be between 1 and 100"}
+
+    client = get_client()
+    try:
+        response = await client.get(
+            f"/api/v2/tickets/{ticket_id}/approvals",
+            params={"page": page, "per_page": per_page},
+        )
+        response.raise_for_status()
+
+        pagination_info = parse_link_header(response.headers.get("Link", ""))
+        return {
+            "approvals": response.json(),
+            "pagination": {
+                "current_page": page,
+                "per_page": per_page,
+                "next_page": pagination_info.get("next"),
+                "prev_page": pagination_info.get("prev"),
+                "has_more": pagination_info.get("next") is not None,
+            },
+        }
+    except Exception as e:
+        return api_error("Failed to fetch ticket approvals", e)
+
+
+@conditional_tool()
+async def view_ticket_approval(ticket_id: int, approval_id: int) -> Dict[str, Any]:
+    """View a single approval record by its approval_id within a ticket."""
+    client = get_client()
+    try:
+        response = await client.get(
+            f"/api/v2/tickets/{ticket_id}/approvals/{approval_id}"
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to fetch ticket approval", e)

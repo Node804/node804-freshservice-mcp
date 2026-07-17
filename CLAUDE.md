@@ -68,6 +68,12 @@ Use `list_ticket_time_entries` and `view_ticket_time_entry` to read time logged 
 
 Equivalent tools exist for changes (`*_change_time_entry`).
 
+### Ticket approvals
+
+Use `list_ticket_approvals` to see who must approve a ticket, along with each approver's stage and decision (requested/approved/rejected). Use `view_ticket_approval` to fetch a single approval record by its `approval_id`. Both are read-only.
+
+Equivalent tools exist for changes (`list_change_approvals`, `view_change_approval`).
+
 ### Filter query syntax
 
 The `filter_tickets` and `filter_changes` tools accept a query string with this syntax:

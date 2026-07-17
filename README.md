@@ -55,7 +55,7 @@ Default mode is `read`.
 **Option A — uv (recommended).** No install step at all: `uvx` fetches the package from PyPI on first run and caches it. Pin the version so upgrades are deliberate:
 
 ```bash
-uvx node804-freshservice-mcp==1.2.0
+uvx node804-freshservice-mcp==1.3.0
 ```
 
 **Option B — pip:**
@@ -87,7 +87,7 @@ Each option provides the `node804-freshservice-mcp` command and the `node804_fre
   "mcpServers": {
     "FreshService": {
       "command": "uvx",
-      "args": ["node804-freshservice-mcp==1.2.0"],
+      "args": ["node804-freshservice-mcp==1.3.0"],
       "env": {
         "FRESHSERVICE_APIKEY": "your_api_key",
         "FRESHSERVICE_DOMAIN": "yourcompany.freshservice.com",
@@ -116,7 +116,7 @@ cp .env.example .env   # edit with your credentials
   "mcpServers": {
     "node804-freshservice-mcp": {
       "command": "uvx",
-      "args": ["node804-freshservice-mcp==1.2.0"],
+      "args": ["node804-freshservice-mcp==1.3.0"],
       "cwd": "/path/to/node804-freshservice-mcp"
     }
   }
@@ -132,7 +132,7 @@ claude mcp add node804-freshservice-mcp \
   -e FRESHSERVICE_APIKEY=your_api_key \
   -e FRESHSERVICE_DOMAIN=yourcompany.freshservice.com \
   -e FRESHSERVICE_MODE=standard \
-  -- uvx node804-freshservice-mcp==1.2.0
+  -- uvx node804-freshservice-mcp==1.3.0
 ```
 
 To verify it was added:
@@ -318,7 +318,7 @@ Everything else has been rewritten or added from scratch:
 
 ## AI-Assisted Development
 
-Portions of this project including code, tests, and documentation were developed with the assistance of generative AI (Anthropic's Claude). All changes are human-reviewed before merge and exercised by the automated test suite, but as with any software, review the code and test against a non-production Freshservice instance before trusting it with write access (`standard` mode or above) to a live tenant.
+Portions of this project including code, tests, and documentation were developed with the assistance of generative AI (Anthropic's Claude, Chat GPT). All changes are human-reviewed before merge and exercised by the automated test suite, but as with any software, review the code and test against a non-production Freshservice instance before trusting it with write access (`standard` mode or above) to a live tenant.
 
 ## License
 
