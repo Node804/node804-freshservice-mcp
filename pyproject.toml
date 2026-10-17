@@ -1,6 +1,6 @@
 [project]
 name = "node804-freshservice-mcp"
-version = "1.3.1"
+version = "1.4.0"
 description = "A configurable MCP server for Freshservice with permission modes"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -8,7 +8,7 @@ license = "MIT"
 dependencies = [
     "build>=1.2.2.post1",
     "httpx==0.28.1",
-    "mcp[cli]>=1.3.0",
+    "mcp[cli]>=1.3.0,<2",
     "node804-mcp-toolkit>=0.1.0",
     "pydantic>=2.10.6",
     "python-dotenv>=1.0.0",

@@ -396,6 +396,136 @@ class TestGetMyTickets:
 
 
 # ---------------------------------------------------------------------------
+# get_ticket_by_id — automatic requested items for service requests
+# ---------------------------------------------------------------------------
+
+FAKE_REQUESTED_ITEMS = {
+    "requested_items": [
+        {
+            "id": 501,
+            "service_item_name": "New Laptop",
+            "quantity": 1,
+            "custom_fields": {"model": "ThinkPad X1"},
+        }
+    ]
+}
+
+
+class TestGetTicketByIdRequestedItems:
+    def _make_mock_client(self, ticket_type):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "ticket": {"id": 42, "subject": "Need a laptop", "description": "", "type": ticket_type}
+        }
+        mock_response.raise_for_status.return_value = None
+
+        mock_client = AsyncMock()
+        mock_client.get.return_value = mock_response
+        return mock_client
+
+    @pytest.mark.asyncio
+    async def test_service_request_includes_items(self, mock_env):
+        from node804_freshservice_mcp.tools.tickets import get_ticket_by_id
+
+        with (
+            patch(
+                "node804_freshservice_mcp.tools.tickets.get_client",
+                return_value=self._make_mock_client("Service Request"),
+            ),
+            patch(
+                "node804_freshservice_mcp.tools.service_catalog.fetch_requested_items",
+                new_callable=AsyncMock,
+                return_value=FAKE_REQUESTED_ITEMS,
+            ) as mock_fetch,
+        ):
+            result = await get_ticket_by_id(42)
+
+        mock_fetch.assert_awaited_once_with(42)
+        assert result["ticket"]["requested_items"][0]["service_item_name"] == "New Laptop"
+
+    @pytest.mark.asyncio
+    async def test_incident_skips_items(self, mock_env):
+        from node804_freshservice_mcp.tools.tickets import get_ticket_by_id
+
+        with (
+            patch(
+                "node804_freshservice_mcp.tools.tickets.get_client",
+                return_value=self._make_mock_client("Incident"),
+            ),
+            patch(
+                "node804_freshservice_mcp.tools.service_catalog.fetch_requested_items",
+                new_callable=AsyncMock,
+                return_value=FAKE_REQUESTED_ITEMS,
+            ) as mock_fetch,
+        ):
+            result = await get_ticket_by_id(42)
+
+        mock_fetch.assert_not_awaited()
+        assert "requested_items" not in result["ticket"]
+
+    @pytest.mark.asyncio
+    async def test_opt_out_skips_items(self, mock_env):
+        from node804_freshservice_mcp.tools.tickets import get_ticket_by_id
+
+        with (
+            patch(
+                "node804_freshservice_mcp.tools.tickets.get_client",
+                return_value=self._make_mock_client("Service Request"),
+            ),
+            patch(
+                "node804_freshservice_mcp.tools.service_catalog.fetch_requested_items",
+                new_callable=AsyncMock,
+                return_value=FAKE_REQUESTED_ITEMS,
+            ) as mock_fetch,
+        ):
+            result = await get_ticket_by_id(42, include_requested_items=False)
+
+        mock_fetch.assert_not_awaited()
+        assert "requested_items" not in result["ticket"]
+
+    @pytest.mark.asyncio
+    async def test_item_fetch_failure_does_not_break_ticket(self, mock_env):
+        from node804_freshservice_mcp.tools.tickets import get_ticket_by_id
+
+        with (
+            patch(
+                "node804_freshservice_mcp.tools.tickets.get_client",
+                return_value=self._make_mock_client("Service Request"),
+            ),
+            patch(
+                "node804_freshservice_mcp.tools.service_catalog.fetch_requested_items",
+                new_callable=AsyncMock,
+                return_value={"error": "Failed to fetch requested items: 403"},
+            ),
+        ):
+            result = await get_ticket_by_id(42)
+
+        assert result["ticket"]["subject"] == "Need a laptop"
+        assert "403" in result["ticket"]["requested_items_error"]
+
+
+class TestServiceRequestHint:
+    def test_flags_service_requests(self):
+        from node804_freshservice_mcp.tools.tickets import _service_request_hint
+
+        hint = _service_request_hint(
+            [
+                {"id": 1, "type": "Incident"},
+                {"id": 2, "type": "Service Request"},
+            ]
+        )
+        assert hint["service_request_ids"] == [2]
+        assert "get_ticket_by_id" in hint["service_request_note"]
+
+    def test_no_hint_without_service_requests(self):
+        from node804_freshservice_mcp.tools.tickets import _service_request_hint
+
+        assert _service_request_hint([{"id": 1, "type": "Incident"}]) == {}
+        assert _service_request_hint(None) == {}
+
+
+# ---------------------------------------------------------------------------
 # Ticket Attachments
 # ---------------------------------------------------------------------------
 

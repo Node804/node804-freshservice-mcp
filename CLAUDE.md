@@ -42,6 +42,14 @@ Use `get_my_tickets(status_filter="unresolved")`. Do NOT manually call `get_curr
 - `status_filter="resolved"` — only Resolved and Closed
 - `status_filter="all"` — every ticket assigned to the agent
 
+### Service requests
+
+`get_ticket_by_id` automatically fetches catalog items for tickets of type "Service Request" and returns them as `ticket.requested_items`. Do NOT call `get_requested_items` as a follow-up — the items are already there. A service request's `description` is normally empty; the actual request details are in the items' custom fields, so read those rather than reporting the ticket as blank.
+
+Pass `include_requested_items=False` to skip the extra call when the items genuinely aren't needed (e.g. you only want the status).
+
+List tools (`get_my_tickets`, `get_tickets`, `filter_tickets`) do not include items — the API doesn't return them for lists. When a page contains service requests, the response carries `service_request_ids` and a note; call `get_ticket_by_id` for any of those you need to summarize.
+
 ### Status lookups
 
 Use `get_ticket_statuses` to get categorized status IDs. Do NOT call `get_ticket_fields` and parse the status choices yourself. The tool returns `resolved_ids`, `unresolved_ids`, and a full `statuses` list with categories.

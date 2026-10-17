@@ -35,6 +35,33 @@ def _append_signature(body: str, signature: str) -> str:
     return f"{body.strip()}\n{signature}"
 
 
+def _service_request_hint(tickets: Any) -> Dict[str, Any]:
+    """Flag any service requests in a ticket list result.
+
+    List endpoints don't return catalog items, and a service request's
+    description is usually empty — so without this the ticket looks blank.
+    Costs 0 API calls; get_ticket_by_id does the actual item fetch."""
+    if not isinstance(tickets, list):
+        return {}
+
+    ids = [
+        t.get("id")
+        for t in tickets
+        if isinstance(t, dict) and t.get("type") == "Service Request"
+    ]
+    if not ids:
+        return {}
+
+    return {
+        "service_request_ids": ids,
+        "service_request_note": (
+            "These tickets are service requests; their details live in catalog "
+            "items, not the description. Call get_ticket_by_id for any you need "
+            "to report on — it returns ticket.requested_items automatically."
+        ),
+    }
+
+
 @conditional_tool()
 @cached_response()
 async def get_ticket_fields() -> Dict[str, Any]:
@@ -207,13 +234,15 @@ async def get_my_tickets(
         response = await client.get(url)
         response.raise_for_status()
         data = response.json()
+        tickets = data.get("tickets", [])
         return {
-            "tickets": data.get("tickets", []),
-            "total": data.get("total", len(data.get("tickets", []))),
+            "tickets": tickets,
+            "total": data.get("total", len(tickets)),
             "query_used": query,
             "status_filter": status_filter,
             "agent_id": agent_id,
             "page": page,
+            **_service_request_hint(tickets),
         }
     except Exception as e:
         return api_error("Failed to fetch tickets", e)
@@ -246,33 +275,74 @@ async def get_tickets(
         )
         response.raise_for_status()
 
+        data = response.json()
         pagination_info = parse_link_header(response.headers.get("Link", ""))
         return {
-            "tickets": response.json(),
+            "tickets": data,
             "pagination": {
                 "current_page": page,
                 "next_page": pagination_info.get("next"),
                 "prev_page": pagination_info.get("prev"),
                 "per_page": per_page,
             },
+            **_service_request_hint(
+                data.get("tickets") if isinstance(data, dict) else data
+            ),
         }
     except Exception as e:
         return api_error("Failed to fetch tickets", e)
 
 
 @conditional_tool()
-async def get_ticket_by_id(ticket_id: int) -> Dict[str, Any]:
+async def get_ticket_by_id(
+    ticket_id: int,
+    include_requested_items: Optional[bool] = None,
+) -> Dict[str, Any]:
     """Fetch a single ticket by its numeric ID.
 
     Returns full ticket details including subject, description, status,
-    priority, requester, agent, custom fields, and timestamps."""
+    priority, requester, agent, custom fields, and timestamps.
+
+    Service requests: their real content lives in the requested catalog
+    items, not the description (which is usually empty).  This tool fetches
+    those items automatically and returns them as ticket.requested_items,
+    so there is no need to follow up with get_requested_items.
+
+    Args:
+        ticket_id: Numeric ticket ID
+        include_requested_items: Leave unset (default) to auto-fetch catalog
+            items for service requests only.  True forces the extra lookup,
+            False skips it (saves 1 API call when items aren't needed)."""
     client = get_client()
     try:
         response = await client.get(f"/api/v2/tickets/{ticket_id}")
         response.raise_for_status()
-        return response.json()
+        data = response.json()
     except Exception as e:
         return api_error("Failed to fetch ticket", e)
+
+    if include_requested_items is False:
+        return data
+
+    ticket = data.get("ticket")
+    if not isinstance(ticket, dict):
+        return data
+
+    is_service_request = ticket.get("type") == "Service Request"
+    if not (is_service_request or include_requested_items):
+        return data
+
+    # Lazy import to avoid circular deps between tool modules
+    from .service_catalog import fetch_requested_items
+
+    items_response = await fetch_requested_items(ticket_id)
+    if "error" in items_response:
+        # Don't fail the whole read — the ticket itself is still useful
+        ticket["requested_items_error"] = items_response["error"]
+    else:
+        ticket["requested_items"] = items_response.get("requested_items", [])
+
+    return data
 
 
 @conditional_tool()
@@ -418,7 +488,10 @@ async def filter_tickets(
     try:
         response = await client.get(url)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        if isinstance(data, dict):
+            data.update(_service_request_hint(data.get("tickets")))
+        return data
     except Exception as e:
         return api_error("Failed to filter tickets", e)
 

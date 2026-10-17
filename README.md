@@ -55,7 +55,7 @@ Default mode is `read`.
 **Option A — uv (recommended).** No install step at all: `uvx` fetches the package from PyPI on first run and caches it. Pin the version so upgrades are deliberate:
 
 ```bash
-uvx node804-freshservice-mcp==1.3.0
+uvx node804-freshservice-mcp==1.4.0
 ```
 
 **Option B — pip:**
@@ -87,7 +87,7 @@ Each option provides the `node804-freshservice-mcp` command and the `node804_fre
   "mcpServers": {
     "FreshService": {
       "command": "uvx",
-      "args": ["node804-freshservice-mcp==1.3.0"],
+      "args": ["node804-freshservice-mcp==1.4.0"],
       "env": {
         "FRESHSERVICE_APIKEY": "your_api_key",
         "FRESHSERVICE_DOMAIN": "yourcompany.freshservice.com",
@@ -116,7 +116,7 @@ cp .env.example .env   # edit with your credentials
   "mcpServers": {
     "node804-freshservice-mcp": {
       "command": "uvx",
-      "args": ["node804-freshservice-mcp==1.3.0"],
+      "args": ["node804-freshservice-mcp==1.4.0"],
       "cwd": "/path/to/node804-freshservice-mcp"
     }
   }
@@ -132,7 +132,7 @@ claude mcp add node804-freshservice-mcp \
   -e FRESHSERVICE_APIKEY=your_api_key \
   -e FRESHSERVICE_DOMAIN=yourcompany.freshservice.com \
   -e FRESHSERVICE_MODE=standard \
-  -- uvx node804-freshservice-mcp==1.3.0
+  -- uvx node804-freshservice-mcp==1.4.0
 ```
 
 To verify it was added:
@@ -313,7 +313,7 @@ Everything else has been rewritten or added from scratch:
 | **Convenience tools** | None | `get_my_tickets`, `get_ticket_statuses`, `get_current_agent` |
 | **Tool descriptions** | Generic one-liners | Enum values, query syntax examples, cross-references, behavioral context |
 | **Credential handling** | None | Validated at startup, fail-fast on missing env vars |
-| **Tests** | None | 55 tests covering cache, rate-limiting, config, permission-map consistency, convenience tools, and attachments |
+| **Tests** | None | 61 tests covering cache, rate-limiting, config, permission-map consistency, convenience tools, and attachments |
 | **Tool count** | ~50 | 107 permission-gated + 2 always-on |
 
 ## AI-Assisted Development

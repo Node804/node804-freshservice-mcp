@@ -64,12 +64,30 @@ async def list_service_items(
         return api_error("Failed to fetch service items", e)
 
 
+async def fetch_requested_items(ticket_id: int) -> Dict[str, Any]:
+    """Fetch requested items for a ticket without re-checking the ticket type.
+
+    Shared by get_requested_items and get_ticket_by_id (which already knows
+    the ticket is a service request and shouldn't pay for a second lookup).
+    Returns the raw API payload, or an error dict."""
+    client = get_client()
+    try:
+        response = await client.get(f"/api/v2/tickets/{ticket_id}/requested_items")
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return api_error("Failed to fetch requested items", e)
+
+
 @conditional_tool()
 async def get_requested_items(ticket_id: int) -> Dict[str, Any]:
     """Fetch the catalog items attached to a service-request ticket.
 
     Only works for tickets of type "Service Request".  Returns the
-    item details, quantity, and fulfillment status for each requested item."""
+    item details, quantity, and fulfillment status for each requested item.
+
+    Note: get_ticket_by_id already includes these items automatically for
+    service requests, so you rarely need to call this tool directly."""
     client = get_client()
 
     # Step 1: Check if the ticket is a service request
@@ -84,12 +102,7 @@ async def get_requested_items(ticket_id: int) -> Dict[str, Any]:
         return api_error("Failed to fetch ticket", e)
 
     # Step 2: Fetch the requested items
-    try:
-        response = await client.get(f"/api/v2/tickets/{ticket_id}/requested_items")
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        return api_error("Failed to fetch requested items", e)
+    return await fetch_requested_items(ticket_id)
 
 
 @conditional_tool()
